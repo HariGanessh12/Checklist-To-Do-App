@@ -163,7 +163,7 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
             ),
             const SizedBox(height: 24),
             DropdownButtonFormField<String>(
-              value: _selectedGroupId,
+              initialValue: _selectedGroupId,
               decoration: InputDecoration(
                 labelText: "Task Group",
                 prefixIcon: const Icon(Icons.folder_open_rounded),

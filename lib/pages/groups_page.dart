@@ -122,7 +122,7 @@ class _GroupsPageState extends State<GroupsPage> {
               width: 72,
               height: 62,
               decoration: BoxDecoration(
-                color: Color(group.colorValue).withOpacity(0.12),
+                color: Color(group.colorValue).withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(18),
               ),
               alignment: Alignment.center,

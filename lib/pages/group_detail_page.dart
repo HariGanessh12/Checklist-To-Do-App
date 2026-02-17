@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/task_model.dart';
 import '../models/task_group_model.dart';
 import '../services/storage_service.dart';
+import '../services/notification_service.dart';
 import '../widgets/add_edit_task_sheet.dart';
 import '../widgets/task_card_widget.dart';
 import '../widgets/task_detail_sheet.dart';
@@ -48,6 +49,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       }
     });
     StorageService.saveTasks(allTasks);
+    NotificationService.scheduleForTask(task);
   }
 
   void _deleteTask(Task task) {
@@ -63,6 +65,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     final allTasks = StorageService.getTasks();
     allTasks.removeWhere((t) => t.id == task.id);
     StorageService.saveTasks(allTasks);
+    NotificationService.cancelForTask(task.id);
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -74,6 +77,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
             final restored = StorageService.getTasks();
             restored.insert(0, task);
             StorageService.saveTasks(restored);
+            NotificationService.scheduleForTask(task);
             _loadData();
           },
         ),
@@ -95,6 +99,22 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     final globalIdx = allTasks.indexWhere((t) => t.id == task.id);
     if (globalIdx != -1) allTasks[globalIdx] = updated;
     StorageService.saveTasks(allTasks);
+    NotificationService.cancelForTask(task.id);
+  }
+
+  Future<void> _notifyTask(Task task) async {
+    final count = await NotificationService.scheduleForTask(task);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          count > 0
+              ? 'Scheduled $count reminder${count > 1 ? 's' : ''} for "${task.title}"'
+              : 'No future reminder time left for "${task.title}"',
+        ),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   Widget _buildAnimatedItem(Task task, Animation<double> animation) {
@@ -109,6 +129,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
             group: widget.group,
             onTap: () => _showTaskDetail(task),
             onToggle: () => _toggleTask(task),
+            onNotify: () => _notifyTask(task),
           ),
         ),
       ),

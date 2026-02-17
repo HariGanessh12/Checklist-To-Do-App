@@ -53,7 +53,7 @@ class AppBottomNav extends StatelessWidget {
     return NavigationBar(
       selectedIndex: currentTab.index,
       backgroundColor: const Color(0xFFF3F0F8),
-      indicatorColor: selectedColor.withOpacity(0.18),
+      indicatorColor: selectedColor.withValues(alpha: 0.18),
       labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
       onDestinationSelected: (index) => _goTo(context, AppTab.values[index]),
       destinations: const [

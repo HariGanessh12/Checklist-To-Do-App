@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/task_model.dart';
 import '../models/task_group_model.dart';
 import '../services/storage_service.dart';
+import '../services/notification_service.dart';
 import '../widgets/add_edit_task_sheet.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/task_card_widget.dart';
@@ -41,6 +42,7 @@ class _IndividualTasksPageState extends State<IndividualTasksPage> {
       if (idx != -1) allTasks[idx] = task;
     }
     StorageService.saveTasks(allTasks);
+    NotificationService.scheduleForTask(task);
     _loadData();
   }
 
@@ -48,6 +50,7 @@ class _IndividualTasksPageState extends State<IndividualTasksPage> {
     final allTasks = StorageService.getTasks();
     allTasks.removeWhere((t) => t.id == task.id);
     StorageService.saveTasks(allTasks);
+    NotificationService.cancelForTask(task.id);
     _loadData();
   }
 
@@ -57,7 +60,23 @@ class _IndividualTasksPageState extends State<IndividualTasksPage> {
     if (idx == -1) return;
     allTasks[idx] = task.copyWith(isCompleted: true);
     StorageService.saveTasks(allTasks);
+    NotificationService.cancelForTask(task.id);
     _loadData();
+  }
+
+  Future<void> _notifyTask(Task task) async {
+    final count = await NotificationService.scheduleForTask(task);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          count > 0
+              ? 'Scheduled $count reminder${count > 1 ? 's' : ''} for "${task.title}"'
+              : 'No future reminder time left for "${task.title}"',
+        ),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   TaskGroup? _groupForTask(Task task) {
@@ -130,6 +149,7 @@ class _IndividualTasksPageState extends State<IndividualTasksPage> {
                           showGroup: false,
                           onTap: () => _showTaskDetail(task),
                           onToggle: () => _toggleTaskCompletion(task),
+                          onNotify: () => _notifyTask(task),
                         );
                       },
                     ),

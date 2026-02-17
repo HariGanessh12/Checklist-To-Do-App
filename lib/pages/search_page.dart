@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/task_group_model.dart';
 import '../models/task_model.dart';
 import '../services/storage_service.dart';
+import '../services/notification_service.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/task_card_widget.dart';
 
@@ -51,6 +52,21 @@ class _SearchPageState extends State<SearchPage> {
     return _groups.firstWhere(
       (g) => g.id == task.groupId,
       orElse: () => _groups.first,
+    );
+  }
+
+  Future<void> _notifyTask(Task task) async {
+    final count = await NotificationService.scheduleForTask(task);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          count > 0
+              ? 'Scheduled $count reminder${count > 1 ? 's' : ''} for "${task.title}"'
+              : 'No future reminder time left for "${task.title}"',
+        ),
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 
@@ -107,6 +123,7 @@ class _SearchPageState extends State<SearchPage> {
                           showGroup: true,
                           onTap: () {},
                           onToggle: () {},
+                          onNotify: task.isCompleted ? null : () => _notifyTask(task),
                         );
                       },
                     ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'core/app_theme.dart';
 import 'pages/home_page.dart';
+import 'services/notification_service.dart';
 import 'services/storage_service.dart';
 
 void main() async {
@@ -8,6 +9,7 @@ void main() async {
   
   // Initialize Offline Storage
   await StorageService.init();
+  await NotificationService.init();
   
   runApp(const MaterialTasksApp());
 }

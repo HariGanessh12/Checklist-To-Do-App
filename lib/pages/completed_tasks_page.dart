@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/task_group_model.dart';
 import '../models/task_model.dart';
 import '../services/storage_service.dart';
+import '../services/notification_service.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/task_card_widget.dart';
 
@@ -34,15 +35,21 @@ class _CompletedTasksPageState extends State<CompletedTasksPage> {
     final allTasks = StorageService.getTasks();
     final index = allTasks.indexWhere((t) => t.id == task.id);
     if (index == -1) return;
-    allTasks[index] = task.copyWith(isCompleted: false);
+    final restoredTask = task.copyWith(isCompleted: false);
+    allTasks[index] = restoredTask;
     StorageService.saveTasks(allTasks);
+    NotificationService.scheduleForTask(restoredTask);
     _loadTasks();
   }
 
   void _clearAll() {
     final allTasks = StorageService.getTasks();
+    final completedIds = allTasks.where((t) => t.isCompleted).map((t) => t.id).toList();
     allTasks.removeWhere((t) => t.isCompleted);
     StorageService.saveTasks(allTasks);
+    for (final taskId in completedIds) {
+      NotificationService.cancelForTask(taskId);
+    }
     _loadTasks();
   }
 

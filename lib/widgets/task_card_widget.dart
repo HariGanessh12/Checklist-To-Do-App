@@ -9,6 +9,7 @@ class TaskCardWidget extends StatelessWidget {
   final TaskGroup? group;
   final VoidCallback onTap;
   final VoidCallback onToggle;
+  final VoidCallback? onNotify;
   final bool showGroup;
 
   const TaskCardWidget({
@@ -17,6 +18,7 @@ class TaskCardWidget extends StatelessWidget {
     this.group,
     required this.onTap,
     required this.onToggle,
+    this.onNotify,
     this.showGroup = false,
   });
 
@@ -98,6 +100,20 @@ class TaskCardWidget extends StatelessWidget {
                         ),
                       ],
                     ),
+                    if (!task.isCompleted && onNotify != null) ...[
+                      const SizedBox(height: 6),
+                      TextButton.icon(
+                        onPressed: onNotify,
+                        icon: const Icon(Icons.notifications_active_outlined, size: 16),
+                        label: const Text('Notify'),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                          minimumSize: const Size(0, 28),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -105,7 +121,7 @@ class TaskCardWidget extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: priorityColor.withOpacity(0.1),
+                  color: priorityColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
