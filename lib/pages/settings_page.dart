@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'reminders_page.dart';
 import '../services/storage_service.dart';
 import '../widgets/app_bottom_nav.dart';
 
@@ -49,9 +50,9 @@ class _SettingsPageState extends State<SettingsPage> {
     await StorageService.clearAllData();
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('All data has been cleared')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('All data has been cleared')));
     setState(() {
       _animationsEnabled = true;
     });
@@ -74,7 +75,7 @@ class _SettingsPageState extends State<SettingsPage> {
               const SizedBox(height: 16),
               _buildSwitchCard(),
               const SizedBox(height: 14),
-              _buildSoonCard(),
+              _buildReminderCard(context),
               const SizedBox(height: 28),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 8),
@@ -94,7 +95,9 @@ class _SettingsPageState extends State<SettingsPage> {
                   style: FilledButton.styleFrom(
                     backgroundColor: const Color(0xFFECCFCB),
                     foregroundColor: const Color(0xFFBF2B22),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 22),
                   ),
                   onPressed: _factoryReset,
@@ -131,7 +134,11 @@ class _SettingsPageState extends State<SettingsPage> {
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: const Color(0xFFD4CDDF)),
         boxShadow: const [
-          BoxShadow(color: Color(0x1A000000), blurRadius: 7, offset: Offset(0, 2)),
+          BoxShadow(
+            color: Color(0x1A000000),
+            blurRadius: 7,
+            offset: Offset(0, 2),
+          ),
         ],
       ),
       child: Row(
@@ -140,58 +147,67 @@ class _SettingsPageState extends State<SettingsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Smooth Animations', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                Text(
+                  'Smooth Animations',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                ),
                 SizedBox(height: 4),
-                Text('Delightful transitions and movements', style: TextStyle(color: Color(0xFF8C8693))),
+                Text(
+                  'Delightful transitions and movements',
+                  style: TextStyle(color: Color(0xFF8C8693)),
+                ),
               ],
             ),
           ),
-          Switch(
-            value: _animationsEnabled,
-            onChanged: _toggleAnimations,
-          ),
+          Switch(value: _animationsEnabled, onChanged: _toggleAnimations),
         ],
       ),
     );
   }
 
-  Widget _buildSoonCard() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF6F6F7),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFD4CDDF)),
-        boxShadow: const [
-          BoxShadow(color: Color(0x14000000), blurRadius: 7, offset: Offset(0, 2)),
-        ],
-      ),
-      child: const Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Smart Reminders', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-                SizedBox(height: 4),
-                Text('Get notified before tasks expire', style: TextStyle(color: Color(0xFF8C8693))),
-              ],
+  Widget _buildReminderCard(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(24),
+      onTap: () {
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const RemindersPage()));
+      },
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF6F6F7),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: const Color(0xFFD4CDDF)),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x14000000),
+              blurRadius: 7,
+              offset: Offset(0, 2),
             ),
-          ),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: Color(0xFFE7E5EA),
-              borderRadius: BorderRadius.all(Radius.circular(12)),
-            ),
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              child: Text(
-                'SOON',
-                style: TextStyle(letterSpacing: 1.0, color: Color(0xFF8F8A97), fontWeight: FontWeight.w700),
+          ],
+        ),
+        child: const Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Smart Reminders',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Manage pending alarms and reminder states',
+                    style: TextStyle(color: Color(0xFF8C8693)),
+                  ),
+                ],
               ),
             ),
-          ),
-        ],
+            Icon(Icons.chevron_right_rounded, color: Color(0xFF8F8A97)),
+          ],
+        ),
       ),
     );
   }

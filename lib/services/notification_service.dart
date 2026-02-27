@@ -61,7 +61,7 @@ class NotificationService {
     await init();
     await cancelForTask(task.id);
 
-    if (task.isCompleted) return 0;
+    if (task.isCompleted || !task.notificationEnabled) return 0;
 
     final now = DateTime.now();
     var scheduledCount = 0;
@@ -152,6 +152,16 @@ class NotificationService {
       case TaskPriority.low:
         return const [Duration.zero];
     }
+  }
+
+  static List<DateTime> upcomingReminderTimes(Task task, {DateTime? now}) {
+    if (task.isCompleted || !task.notificationEnabled) return const [];
+    final current = now ?? DateTime.now();
+    return _priorityOffsets(task.priority)
+        .map((offset) => task.dueDate.add(offset))
+        .where((time) => !time.isBefore(current))
+        .toList()
+      ..sort();
   }
 
   static String _titleForOffset(Duration offset, TaskPriority priority) {

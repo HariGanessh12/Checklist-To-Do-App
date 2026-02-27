@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
@@ -12,8 +11,8 @@ class AddEditTaskSheet extends StatefulWidget {
   final String? initialGroupId;
 
   const AddEditTaskSheet({
-    super.key, 
-    required this.groups, 
+    super.key,
+    required this.groups,
     required this.onSave,
     this.taskToEdit,
     this.initialGroupId,
@@ -33,11 +32,20 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController(text: widget.taskToEdit?.title ?? '');
-    _descriptionController = TextEditingController(text: widget.taskToEdit?.description ?? '');
+    _titleController = TextEditingController(
+      text: widget.taskToEdit?.title ?? '',
+    );
+    _descriptionController = TextEditingController(
+      text: widget.taskToEdit?.description ?? '',
+    );
     _priority = widget.taskToEdit?.priority ?? TaskPriority.medium;
-    _selectedGroupId = widget.taskToEdit?.groupId ?? widget.initialGroupId ?? widget.groups.first.id;
-    _selectedDate = widget.taskToEdit?.dueDate ?? DateTime.now().add(const Duration(hours: 1));
+    _selectedGroupId =
+        widget.taskToEdit?.groupId ??
+        widget.initialGroupId ??
+        widget.groups.first.id;
+    _selectedDate =
+        widget.taskToEdit?.dueDate ??
+        DateTime.now().add(const Duration(hours: 1));
   }
 
   @override
@@ -54,7 +62,7 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
       firstDate: DateTime.now().subtract(const Duration(days: 0)),
       lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
     );
-    
+
     if (date == null) return;
 
     if (!mounted) return;
@@ -81,7 +89,9 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
     return Container(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
-        left: 24, right: 24, top: 12,
+        left: 24,
+        right: 24,
+        top: 12,
       ),
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -104,8 +114,12 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
             ),
             const SizedBox(height: 24),
             Text(
-              widget.taskToEdit == null ? "Create New Task" : "Edit Task", 
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: -0.5)
+              widget.taskToEdit == null ? "Create New Task" : "Edit Task",
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                letterSpacing: -0.5,
+              ),
             ),
             const SizedBox(height: 24),
             TextField(
@@ -133,17 +147,30 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
             const Divider(height: 32),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.calendar_today_rounded, color: Color(0xFF6750A4)),
-              title: const Text("Due Date & Time", style: TextStyle(fontWeight: FontWeight.w600)),
+              leading: const Icon(
+                Icons.calendar_today_rounded,
+                color: Color(0xFF6750A4),
+              ),
+              title: const Text(
+                "Due Date & Time",
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
               subtitle: Text(
                 DateFormat('EEEE, MMM dd • hh:mm a').format(_selectedDate),
-                style: TextStyle(color: _selectedDate.isBefore(DateTime.now()) ? Colors.red : Colors.grey.shade700),
+                style: TextStyle(
+                  color: _selectedDate.isBefore(DateTime.now())
+                      ? Colors.red
+                      : Colors.grey.shade700,
+                ),
               ),
               onTap: _pickDateTime,
               trailing: const Icon(Icons.chevron_right_rounded),
             ),
             const SizedBox(height: 16),
-            const Text("Priority", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const Text(
+              "Priority",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
             const SizedBox(height: 12),
             Row(
               children: TaskPriority.values.map((p) {
@@ -152,7 +179,11 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
                   child: Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: ChoiceChip(
-                      label: Center(child: Text(p.name[0].toUpperCase() + p.name.substring(1))),
+                      label: Center(
+                        child: Text(
+                          p.name[0].toUpperCase() + p.name.substring(1),
+                        ),
+                      ),
                       selected: isSelected,
                       onSelected: (_) => setState(() => _priority = p),
                       showCheckmark: false,
@@ -167,15 +198,25 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
               decoration: InputDecoration(
                 labelText: "Task Group",
                 prefixIcon: const Icon(Icons.folder_open_rounded),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
               ),
               items: [
-                const DropdownMenuItem(value: 'individual', child: Text("📥 Individual")),
-                ...widget.groups.map((g) => DropdownMenuItem(
-                  value: g.id,
-                  child: Text("${g.icon} ${g.name}"),
-                )),
+                const DropdownMenuItem(
+                  value: 'individual',
+                  child: Text("📥 Individual"),
+                ),
+                ...widget.groups.map(
+                  (g) => DropdownMenuItem(
+                    value: g.id,
+                    child: Text("${g.icon} ${g.name}"),
+                  ),
+                ),
               ],
               onChanged: (v) => setState(() => _selectedGroupId = v!),
             ),
@@ -185,7 +226,9 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
               height: 60,
               child: FilledButton(
                 style: FilledButton.styleFrom(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                 ),
                 onPressed: () {
                   if (_titleController.text.trim().isEmpty) return;
@@ -197,14 +240,19 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
                     priority: _priority,
                     dueDate: _selectedDate,
                     isCompleted: widget.taskToEdit?.isCompleted ?? false,
+                    notificationEnabled:
+                        widget.taskToEdit?.notificationEnabled ?? true,
                     createdAt: widget.taskToEdit?.createdAt ?? DateTime.now(),
                   );
                   widget.onSave(task);
                   Navigator.pop(context);
                 },
                 child: Text(
-                  widget.taskToEdit == null ? "Create Task" : "Save Changes", 
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)
+                  widget.taskToEdit == null ? "Create Task" : "Save Changes",
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),

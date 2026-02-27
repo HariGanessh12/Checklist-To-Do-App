@@ -1,4 +1,3 @@
-
 enum TaskPriority { low, medium, high }
 
 class Task {
@@ -9,6 +8,7 @@ class Task {
   final TaskPriority priority;
   final DateTime dueDate;
   final bool isCompleted;
+  final bool notificationEnabled;
   final DateTime createdAt;
 
   Task({
@@ -19,6 +19,7 @@ class Task {
     this.priority = TaskPriority.medium,
     required this.dueDate,
     this.isCompleted = false,
+    this.notificationEnabled = true,
     required this.createdAt,
   });
 
@@ -28,6 +29,7 @@ class Task {
     TaskPriority? priority,
     DateTime? dueDate,
     bool? isCompleted,
+    bool? notificationEnabled,
     String? groupId,
   }) {
     return Task(
@@ -38,6 +40,7 @@ class Task {
       priority: priority ?? this.priority,
       dueDate: dueDate ?? this.dueDate,
       isCompleted: isCompleted ?? this.isCompleted,
+      notificationEnabled: notificationEnabled ?? this.notificationEnabled,
       createdAt: createdAt,
     );
   }
@@ -51,6 +54,7 @@ class Task {
       'priority': priority.index,
       'dueDate': dueDate.toIso8601String(),
       'isCompleted': isCompleted,
+      'notificationEnabled': notificationEnabled,
       'createdAt': createdAt.toIso8601String(),
     };
   }
@@ -64,6 +68,7 @@ class Task {
       priority: TaskPriority.values[json['priority']],
       dueDate: DateTime.parse(json['dueDate']),
       isCompleted: json['isCompleted'],
+      notificationEnabled: json['notificationEnabled'] ?? true,
       createdAt: DateTime.parse(json['createdAt']),
     );
   }
