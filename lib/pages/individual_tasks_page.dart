@@ -30,10 +30,17 @@ class _IndividualTasksPageState extends State<IndividualTasksPage> {
     final all = StorageService.getTasks();
     setState(() {
       _groups = StorageService.getGroups();
-      _tasks = all
-          .where((t) => !t.isCompleted && t.groupId == 'individual')
-          .toList();
+      _tasks =
+          all.where((t) => !t.isCompleted && t.groupId == 'individual').toList()
+            ..sort(_comparePinnedThenDueDate);
     });
+  }
+
+  int _comparePinnedThenDueDate(Task a, Task b) {
+    if (a.isPinned != b.isPinned) {
+      return a.isPinned ? -1 : 1;
+    }
+    return a.dueDate.compareTo(b.dueDate);
   }
 
   void _saveTask(Task task, {bool isNew = true}) {
@@ -61,7 +68,10 @@ class _IndividualTasksPageState extends State<IndividualTasksPage> {
     final allTasks = StorageService.getTasks();
     final idx = allTasks.indexWhere((t) => t.id == task.id);
     if (idx == -1) return;
-    allTasks[idx] = task.copyWith(isCompleted: true);
+    allTasks[idx] = task.copyWith(
+      isCompleted: true,
+      completedAt: DateTime.now(),
+    );
     final nextTask = RecurrenceService.nextOccurrenceFor(task);
     if (nextTask != null) {
       allTasks.insert(0, nextTask);
@@ -71,6 +81,15 @@ class _IndividualTasksPageState extends State<IndividualTasksPage> {
     if (nextTask != null) {
       NotificationService.scheduleForTask(nextTask);
     }
+    _loadData();
+  }
+
+  void _togglePin(Task task) {
+    final allTasks = StorageService.getTasks();
+    final idx = allTasks.indexWhere((entry) => entry.id == task.id);
+    if (idx == -1) return;
+    allTasks[idx] = task.copyWith(isPinned: !task.isPinned);
+    StorageService.saveTasks(allTasks);
     _loadData();
   }
 
@@ -159,6 +178,7 @@ class _IndividualTasksPageState extends State<IndividualTasksPage> {
                           showGroup: false,
                           onTap: () => _showTaskDetail(task),
                           onToggle: () => _toggleTaskCompletion(task),
+                          onPinToggle: () => _togglePin(task),
                           onNotify: () => _notifyTask(task),
                         );
                       },

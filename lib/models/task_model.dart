@@ -2,6 +2,31 @@ enum TaskPriority { low, medium, high }
 
 enum TaskRecurrence { none, daily, weekly, custom }
 
+class Subtask {
+  final String title;
+  final bool isCompleted;
+
+  const Subtask({required this.title, this.isCompleted = false});
+
+  Subtask copyWith({String? title, bool? isCompleted}) {
+    return Subtask(
+      title: title ?? this.title,
+      isCompleted: isCompleted ?? this.isCompleted,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'title': title, 'isCompleted': isCompleted};
+  }
+
+  factory Subtask.fromJson(Map<String, dynamic> json) {
+    return Subtask(
+      title: json['title'] ?? '',
+      isCompleted: json['isCompleted'] ?? false,
+    );
+  }
+}
+
 class Task {
   final String id;
   final String groupId;
@@ -10,9 +35,12 @@ class Task {
   final TaskPriority priority;
   final DateTime dueDate;
   final bool isCompleted;
+  final DateTime? completedAt;
+  final bool isPinned;
   final bool notificationEnabled;
   final TaskRecurrence recurrence;
   final int? recurrenceIntervalDays;
+  final List<Subtask> subtasks;
   final DateTime createdAt;
 
   Task({
@@ -23,9 +51,12 @@ class Task {
     this.priority = TaskPriority.medium,
     required this.dueDate,
     this.isCompleted = false,
+    this.completedAt,
+    this.isPinned = false,
     this.notificationEnabled = true,
     this.recurrence = TaskRecurrence.none,
     this.recurrenceIntervalDays,
+    this.subtasks = const [],
     required this.createdAt,
   });
 
@@ -35,9 +66,13 @@ class Task {
     TaskPriority? priority,
     DateTime? dueDate,
     bool? isCompleted,
+    DateTime? completedAt,
+    bool clearCompletedAt = false,
+    bool? isPinned,
     bool? notificationEnabled,
     TaskRecurrence? recurrence,
     int? recurrenceIntervalDays,
+    List<Subtask>? subtasks,
     String? groupId,
   }) {
     return Task(
@@ -48,10 +83,13 @@ class Task {
       priority: priority ?? this.priority,
       dueDate: dueDate ?? this.dueDate,
       isCompleted: isCompleted ?? this.isCompleted,
+      completedAt: clearCompletedAt ? null : (completedAt ?? this.completedAt),
+      isPinned: isPinned ?? this.isPinned,
       notificationEnabled: notificationEnabled ?? this.notificationEnabled,
       recurrence: recurrence ?? this.recurrence,
       recurrenceIntervalDays:
           recurrenceIntervalDays ?? this.recurrenceIntervalDays,
+      subtasks: subtasks ?? this.subtasks,
       createdAt: createdAt,
     );
   }
@@ -65,9 +103,12 @@ class Task {
       'priority': priority.index,
       'dueDate': dueDate.toIso8601String(),
       'isCompleted': isCompleted,
+      'completedAt': completedAt?.toIso8601String(),
+      'isPinned': isPinned,
       'notificationEnabled': notificationEnabled,
       'recurrence': recurrence.index,
       'recurrenceIntervalDays': recurrenceIntervalDays,
+      'subtasks': subtasks.map((subtask) => subtask.toJson()).toList(),
       'createdAt': createdAt.toIso8601String(),
     };
   }
@@ -81,9 +122,20 @@ class Task {
       priority: TaskPriority.values[json['priority']],
       dueDate: DateTime.parse(json['dueDate']),
       isCompleted: json['isCompleted'],
+      completedAt: json['completedAt'] == null
+          ? null
+          : DateTime.parse(json['completedAt']),
+      isPinned: json['isPinned'] ?? false,
       notificationEnabled: json['notificationEnabled'] ?? true,
       recurrence: TaskRecurrence.values[json['recurrence'] ?? 0],
       recurrenceIntervalDays: json['recurrenceIntervalDays'],
+      subtasks:
+          (json['subtasks'] as List?)
+              ?.map(
+                (entry) => Subtask.fromJson(Map<String, dynamic>.from(entry)),
+              )
+              .toList() ??
+          const [],
       createdAt: DateTime.parse(json['createdAt']),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/task_group_model.dart';
 import '../models/task_model.dart';
+import 'calendar_page.dart';
 import '../services/storage_service.dart';
 import '../services/notification_service.dart';
 import '../services/recurrence_service.dart';
@@ -20,6 +21,7 @@ class _HomePageState extends State<HomePage> {
   List<Task> _tasks = [];
   List<TaskGroup> _groups = [];
   String _selectedGroupId = 'all';
+  TaskTimeFilter _selectedTimeFilter = TaskTimeFilter.today;
 
   @override
   void initState() {
@@ -34,9 +36,64 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  List<Task> get _visibleTasks {
+  List<Task> get _groupFilteredTasks {
     if (_selectedGroupId == 'all') return _tasks;
     return _tasks.where((t) => t.groupId == _selectedGroupId).toList();
+  }
+
+  List<Task> get _visibleTasks {
+    final source = _groupFilteredTasks;
+    return source.where(_matchesTimeFilter).toList()
+      ..sort(_comparePinnedThenDueDate);
+  }
+
+  int _comparePinnedThenDueDate(Task a, Task b) {
+    if (a.isPinned != b.isPinned) {
+      return a.isPinned ? -1 : 1;
+    }
+    return a.dueDate.compareTo(b.dueDate);
+  }
+
+  bool _matchesTimeFilter(Task task) {
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+    final tomorrowStart = todayStart.add(const Duration(days: 1));
+
+    switch (_selectedTimeFilter) {
+      case TaskTimeFilter.today:
+        return !task.dueDate.isBefore(now) &&
+            !task.dueDate.isBefore(todayStart) &&
+            task.dueDate.isBefore(tomorrowStart);
+      case TaskTimeFilter.upcoming:
+        return !task.dueDate.isBefore(tomorrowStart);
+      case TaskTimeFilter.overdue:
+        return task.dueDate.isBefore(now);
+    }
+  }
+
+  int _countForFilter(TaskTimeFilter filter) {
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+    final tomorrowStart = todayStart.add(const Duration(days: 1));
+    final source = _groupFilteredTasks;
+
+    switch (filter) {
+      case TaskTimeFilter.today:
+        return source
+            .where(
+              (task) =>
+                  !task.dueDate.isBefore(now) &&
+                  !task.dueDate.isBefore(todayStart) &&
+                  task.dueDate.isBefore(tomorrowStart),
+            )
+            .length;
+      case TaskTimeFilter.upcoming:
+        return source
+            .where((task) => !task.dueDate.isBefore(tomorrowStart))
+            .length;
+      case TaskTimeFilter.overdue:
+        return source.where((task) => task.dueDate.isBefore(now)).length;
+    }
   }
 
   TaskGroup? _groupForTask(Task task) {
@@ -73,7 +130,10 @@ class _HomePageState extends State<HomePage> {
     final allTasks = StorageService.getTasks();
     final idx = allTasks.indexWhere((t) => t.id == task.id);
     if (idx == -1) return;
-    allTasks[idx] = task.copyWith(isCompleted: true);
+    allTasks[idx] = task.copyWith(
+      isCompleted: true,
+      completedAt: DateTime.now(),
+    );
     final nextTask = RecurrenceService.nextOccurrenceFor(task);
     if (nextTask != null) {
       allTasks.insert(0, nextTask);
@@ -83,6 +143,15 @@ class _HomePageState extends State<HomePage> {
     if (nextTask != null) {
       NotificationService.scheduleForTask(nextTask);
     }
+    _loadData();
+  }
+
+  void _togglePin(Task task) {
+    final allTasks = StorageService.getTasks();
+    final idx = allTasks.indexWhere((entry) => entry.id == task.id);
+    if (idx == -1) return;
+    allTasks[idx] = task.copyWith(isPinned: !task.isPinned);
+    StorageService.saveTasks(allTasks);
     _loadData();
   }
 
@@ -143,14 +212,33 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 18, 16, 4),
-              child: Text(
-                'My Tasks',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 18, 16, 4),
+              child: Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'My Tasks',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Calendar View',
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const CalendarPage()),
+                      );
+                    },
+                    icon: const Icon(Icons.calendar_month_rounded),
+                  ),
+                ],
               ),
             ),
             _buildGroupTabs(),
+            _buildTimeFilterTabs(),
             Expanded(
               child: visibleTasks.isEmpty
                   ? _buildEmptyState()
@@ -165,6 +253,7 @@ class _HomePageState extends State<HomePage> {
                           showGroup: _selectedGroupId == 'all',
                           onTap: () => _showTaskDetail(task),
                           onToggle: () => _toggleTaskCompletion(task),
+                          onPinToggle: () => _togglePin(task),
                           onNotify: () => _notifyTask(task),
                         );
                       },
@@ -227,6 +316,61 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Widget _buildTimeFilterTabs() {
+    return SizedBox(
+      height: 54,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(14, 0, 14, 0),
+        children: [
+          _buildTimeFilterChip(
+            label: 'Today',
+            count: _countForFilter(TaskTimeFilter.today),
+            filter: TaskTimeFilter.today,
+          ),
+          _buildTimeFilterChip(
+            label: 'Upcoming',
+            count: _countForFilter(TaskTimeFilter.upcoming),
+            filter: TaskTimeFilter.upcoming,
+          ),
+          _buildTimeFilterChip(
+            label: 'Overdue',
+            count: _countForFilter(TaskTimeFilter.overdue),
+            filter: TaskTimeFilter.overdue,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimeFilterChip({
+    required String label,
+    required int count,
+    required TaskTimeFilter filter,
+  }) {
+    final selected = _selectedTimeFilter == filter;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: ChoiceChip(
+        selected: selected,
+        showCheckmark: false,
+        label: Text(
+          '$label ($count)',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: selected ? Colors.white : const Color(0xFF373340),
+          ),
+        ),
+        selectedColor: const Color(0xFF3A7CA5),
+        backgroundColor: const Color(0xFFF6F4FA),
+        side: BorderSide(
+          color: selected ? Colors.transparent : const Color(0xFFD2C9DE),
+        ),
+        onSelected: (_) => setState(() => _selectedTimeFilter = filter),
+      ),
+    );
+  }
+
   Widget _buildEmptyState() {
     return Center(
       child: Column(
@@ -265,3 +409,5 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
+
+enum TaskTimeFilter { today, upcoming, overdue }

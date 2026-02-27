@@ -82,6 +82,46 @@ class TaskDetailSheet extends StatelessWidget {
             Text(task.description, style: const TextStyle(fontSize: 16)),
             const SizedBox(height: 24),
           ],
+          if (task.subtasks.isNotEmpty) ...[
+            const Text(
+              "Subtasks",
+              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),
+            ),
+            const SizedBox(height: 8),
+            ...task.subtasks.map(
+              (subtask) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  children: [
+                    Icon(
+                      subtask.isCompleted
+                          ? Icons.check_circle_rounded
+                          : Icons.radio_button_unchecked_rounded,
+                      size: 18,
+                      color: subtask.isCompleted
+                          ? Colors.green
+                          : Colors.grey.shade500,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        subtask.title,
+                        style: TextStyle(
+                          decoration: subtask.isCompleted
+                              ? TextDecoration.lineThrough
+                              : null,
+                          color: subtask.isCompleted
+                              ? Colors.grey.shade600
+                              : Colors.black87,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
           const Text(
             "Schedule",
             style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),

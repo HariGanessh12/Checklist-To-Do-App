@@ -29,10 +29,19 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   void _loadData() {
     setState(() {
       final allTasks = StorageService.getTasks();
-      _groupTasks = allTasks
-          .where((t) => t.groupId == widget.group.id && !t.isCompleted)
-          .toList();
+      _groupTasks =
+          allTasks
+              .where((t) => t.groupId == widget.group.id && !t.isCompleted)
+              .toList()
+            ..sort(_comparePinnedThenDueDate);
     });
+  }
+
+  int _comparePinnedThenDueDate(Task a, Task b) {
+    if (a.isPinned != b.isPinned) {
+      return a.isPinned ? -1 : 1;
+    }
+    return a.dueDate.compareTo(b.dueDate);
   }
 
   void _saveTask(Task task, {bool isNew = true}) {
@@ -41,12 +50,19 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       if (isNew) {
         allTasks.insert(0, task);
         _groupTasks.insert(0, task);
-        _listKey.currentState?.insertItem(0);
+        _groupTasks.sort(_comparePinnedThenDueDate);
+        final insertIndex = _groupTasks.indexWhere(
+          (entry) => entry.id == task.id,
+        );
+        if (insertIndex != -1) {
+          _listKey.currentState?.insertItem(insertIndex);
+        }
       } else {
         final index = allTasks.indexWhere((t) => t.id == task.id);
         if (index != -1) allTasks[index] = task;
         final gIndex = _groupTasks.indexWhere((t) => t.id == task.id);
         if (gIndex != -1) _groupTasks[gIndex] = task;
+        _groupTasks.sort(_comparePinnedThenDueDate);
       }
     });
     StorageService.saveTasks(allTasks);
@@ -90,7 +106,10 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     final index = _groupTasks.indexWhere((t) => t.id == task.id);
     if (index == -1) return;
 
-    final updated = task.copyWith(isCompleted: true);
+    final updated = task.copyWith(
+      isCompleted: true,
+      completedAt: DateTime.now(),
+    );
     final nextTask = RecurrenceService.nextOccurrenceFor(task);
     setState(() {
       _groupTasks.removeAt(index);
@@ -132,6 +151,16 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     );
   }
 
+  void _togglePin(Task task) {
+    final allTasks = StorageService.getTasks();
+    final idx = allTasks.indexWhere((entry) => entry.id == task.id);
+    if (idx == -1) return;
+    final updated = task.copyWith(isPinned: !task.isPinned);
+    allTasks[idx] = updated;
+    StorageService.saveTasks(allTasks);
+    _loadData();
+  }
+
   Widget _buildAnimatedItem(Task task, Animation<double> animation) {
     return FadeTransition(
       opacity: animation,
@@ -149,6 +178,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
             group: widget.group,
             onTap: () => _showTaskDetail(task),
             onToggle: () => _toggleTask(task),
+            onPinToggle: () => _togglePin(task),
             onNotify: () => _notifyTask(task),
           ),
         ),

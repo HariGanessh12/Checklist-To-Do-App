@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'reminders_page.dart';
+import 'productivity_stats_page.dart';
 import '../services/storage_service.dart';
 import '../widgets/app_bottom_nav.dart';
 
@@ -74,6 +75,8 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
               const SizedBox(height: 16),
               _buildSwitchCard(),
+              const SizedBox(height: 14),
+              _buildStatsCard(context),
               const SizedBox(height: 14),
               _buildReminderCard(context),
               const SizedBox(height: 28),
@@ -200,6 +203,53 @@ class _SettingsPageState extends State<SettingsPage> {
                   SizedBox(height: 4),
                   Text(
                     'Manage pending alarms and reminder states',
+                    style: TextStyle(color: Color(0xFF8C8693)),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded, color: Color(0xFF8F8A97)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatsCard(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(24),
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const ProductivityStatsPage()),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF6F6F7),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: const Color(0xFFD4CDDF)),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x14000000),
+              blurRadius: 7,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: const Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Productivity Stats',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Completion rate, streaks, and average delay',
                     style: TextStyle(color: Color(0xFF8C8693)),
                   ),
                 ],

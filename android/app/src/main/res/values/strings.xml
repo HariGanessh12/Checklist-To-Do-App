@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">checklist_app</string>
+    <string name="today_tasks_widget_name">Today Tasks</string>
+    <string name="next_reminder_widget_name">Next Reminder</string>
+</resources>

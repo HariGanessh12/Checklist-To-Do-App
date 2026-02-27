@@ -35,7 +35,10 @@ class _CompletedTasksPageState extends State<CompletedTasksPage> {
     final allTasks = StorageService.getTasks();
     final index = allTasks.indexWhere((t) => t.id == task.id);
     if (index == -1) return;
-    final restoredTask = task.copyWith(isCompleted: false);
+    final restoredTask = task.copyWith(
+      isCompleted: false,
+      clearCompletedAt: true,
+    );
     allTasks[index] = restoredTask;
     StorageService.saveTasks(allTasks);
     NotificationService.scheduleForTask(restoredTask);
@@ -44,7 +47,10 @@ class _CompletedTasksPageState extends State<CompletedTasksPage> {
 
   void _clearAll() {
     final allTasks = StorageService.getTasks();
-    final completedIds = allTasks.where((t) => t.isCompleted).map((t) => t.id).toList();
+    final completedIds = allTasks
+        .where((t) => t.isCompleted)
+        .map((t) => t.id)
+        .toList();
     allTasks.removeWhere((t) => t.isCompleted);
     StorageService.saveTasks(allTasks);
     for (final taskId in completedIds) {
@@ -83,7 +89,10 @@ class _CompletedTasksPageState extends State<CompletedTasksPage> {
                       onPressed: _clearAll,
                       child: const Text(
                         'CLEAR ALL',
-                        style: TextStyle(color: Color(0xFFC1332C), fontWeight: FontWeight.w700),
+                        style: TextStyle(
+                          color: Color(0xFFC1332C),
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                 ],
@@ -122,14 +131,25 @@ class _CompletedTasksPageState extends State<CompletedTasksPage> {
           Container(
             width: 190,
             height: 190,
-            decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.grey.shade200),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.grey.shade200,
+            ),
             alignment: Alignment.center,
-            child: const Icon(Icons.emoji_events_rounded, size: 66, color: Color(0xFFF0B43C)),
+            child: const Icon(
+              Icons.emoji_events_rounded,
+              size: 66,
+              color: Color(0xFFF0B43C),
+            ),
           ),
           const SizedBox(height: 32),
           const Text(
             'Looking clear!',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF4B4754)),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF4B4754),
+            ),
           ),
           const SizedBox(height: 8),
           Text(

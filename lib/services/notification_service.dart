@@ -5,18 +5,44 @@ import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../models/task_model.dart';
+import 'reminder_preset_service.dart';
+import 'storage_service.dart';
+
+const String _snooze10mActionId = 'snooze_10m';
+const String _snooze1hActionId = 'snooze_1h';
+const String _snoozeTomorrowActionId = 'snooze_tomorrow';
+
+@pragma('vm:entry-point')
+void notificationTapBackground(NotificationResponse notificationResponse) {
+  NotificationService.handleNotificationResponse(notificationResponse);
+}
 
 class NotificationService {
   static final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
   static bool _isInitialized = false;
-  static const int _maxNotificationSlots = 4;
+  static const int _maxNotificationSlots = 7;
+  static const int _snooze10mSlot = 4;
+  static const int _snooze1hSlot = 5;
+  static const int _snoozeTomorrowSlot = 6;
+  static const List<AndroidNotificationAction> _androidSnoozeActions = [
+    AndroidNotificationAction(_snooze10mActionId, 'Snooze 10m'),
+    AndroidNotificationAction(_snooze1hActionId, 'Snooze 1h'),
+    AndroidNotificationAction(_snoozeTomorrowActionId, 'Tomorrow'),
+  ];
 
   static Future<void> init() async {
+    if (_isInitialized) return;
+    await _initPluginCore();
+    await requestPermissions();
+  }
+
+  static Future<void> _initPluginCore() async {
     if (_isInitialized) return;
 
     tz.initializeTimeZones();
     await _configureLocalTimeZone();
+    await ReminderPresetService.init();
 
     const androidSettings = AndroidInitializationSettings(
       '@mipmap/ic_launcher',
@@ -28,8 +54,11 @@ class NotificationService {
       macOS: iosSettings,
     );
 
-    await _notifications.initialize(settings);
-    await requestPermissions();
+    await _notifications.initialize(
+      settings,
+      onDidReceiveNotificationResponse: handleNotificationResponse,
+      onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
+    );
     _isInitialized = true;
   }
 
@@ -65,7 +94,7 @@ class NotificationService {
 
     final now = DateTime.now();
     var scheduledCount = 0;
-    final offsets = _priorityOffsets(task.priority);
+    final offsets = ReminderPresetService.getOffsets(task.priority);
     final android = _notifications
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
@@ -84,44 +113,22 @@ class NotificationService {
       final body = 'Task: ${task.title}';
 
       try {
-        await _notifications.zonedSchedule(
-          notificationId,
-          title,
-          body,
-          tz.TZDateTime.from(scheduledTime, tz.local),
-          const NotificationDetails(
-            android: AndroidNotificationDetails(
-              'task_reminders',
-              'Task Reminders',
-              channelDescription: 'Reminders for upcoming tasks',
-              importance: Importance.max,
-              priority: Priority.high,
-            ),
-            iOS: DarwinNotificationDetails(),
-            macOS: DarwinNotificationDetails(),
-          ),
-          androidScheduleMode: scheduleMode,
+        await _scheduleAt(
+          notificationId: notificationId,
+          title: title,
+          body: body,
+          scheduledTime: scheduledTime,
           payload: task.id,
+          scheduleMode: scheduleMode,
         );
       } on PlatformException {
-        await _notifications.zonedSchedule(
-          notificationId,
-          title,
-          body,
-          tz.TZDateTime.from(scheduledTime, tz.local),
-          const NotificationDetails(
-            android: AndroidNotificationDetails(
-              'task_reminders',
-              'Task Reminders',
-              channelDescription: 'Reminders for upcoming tasks',
-              importance: Importance.max,
-              priority: Priority.high,
-            ),
-            iOS: DarwinNotificationDetails(),
-            macOS: DarwinNotificationDetails(),
-          ),
-          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        await _scheduleAt(
+          notificationId: notificationId,
+          title: title,
+          body: body,
+          scheduledTime: scheduledTime,
           payload: task.id,
+          scheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         );
       }
 
@@ -138,30 +145,90 @@ class NotificationService {
     }
   }
 
-  static List<Duration> _priorityOffsets(TaskPriority priority) {
-    switch (priority) {
-      case TaskPriority.high:
-        return const [
-          Duration(days: -1),
-          Duration(hours: -1),
-          Duration.zero,
-          Duration(minutes: 15),
-        ];
-      case TaskPriority.medium:
-        return const [Duration(hours: -1), Duration.zero];
-      case TaskPriority.low:
-        return const [Duration.zero];
-    }
-  }
-
   static List<DateTime> upcomingReminderTimes(Task task, {DateTime? now}) {
     if (task.isCompleted || !task.notificationEnabled) return const [];
     final current = now ?? DateTime.now();
-    return _priorityOffsets(task.priority)
+    return ReminderPresetService.getOffsets(task.priority)
         .map((offset) => task.dueDate.add(offset))
         .where((time) => !time.isBefore(current))
         .toList()
       ..sort();
+  }
+
+  static Future<void> handleNotificationResponse(
+    NotificationResponse response,
+  ) async {
+    final actionId = response.actionId;
+    if (actionId != _snooze10mActionId &&
+        actionId != _snooze1hActionId &&
+        actionId != _snoozeTomorrowActionId) {
+      return;
+    }
+
+    final taskId = response.payload;
+    if (taskId == null || taskId.isEmpty) return;
+
+    await _initPluginCore();
+    await StorageService.init();
+    final tasks = StorageService.getTasks();
+    final taskIndex = tasks.indexWhere((task) => task.id == taskId);
+    if (taskIndex == -1) return;
+
+    final task = tasks[taskIndex];
+    if (task.isCompleted || !task.notificationEnabled) return;
+
+    final now = DateTime.now();
+    DateTime snoozeUntil;
+    var snoozeSlot = _snooze10mSlot;
+    if (actionId == _snooze10mActionId) {
+      snoozeUntil = now.add(const Duration(minutes: 10));
+      snoozeSlot = _snooze10mSlot;
+    } else if (actionId == _snooze1hActionId) {
+      snoozeUntil = now.add(const Duration(hours: 1));
+      snoozeSlot = _snooze1hSlot;
+    } else {
+      snoozeUntil = DateTime(
+        now.year,
+        now.month,
+        now.day + 1,
+        now.hour,
+        now.minute,
+      );
+      snoozeSlot = _snoozeTomorrowSlot;
+    }
+
+    final notificationId = _notificationId(task.id, snoozeSlot);
+    final title = 'Snoozed Reminder';
+    final body = 'Task: ${task.title}';
+
+    final android = _notifications
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    final canExact = await android?.canScheduleExactNotifications() ?? false;
+    final scheduleMode = canExact
+        ? AndroidScheduleMode.exactAllowWhileIdle
+        : AndroidScheduleMode.inexactAllowWhileIdle;
+
+    try {
+      await _scheduleAt(
+        notificationId: notificationId,
+        title: title,
+        body: body,
+        scheduledTime: snoozeUntil,
+        payload: task.id,
+        scheduleMode: scheduleMode,
+      );
+    } on PlatformException {
+      await _scheduleAt(
+        notificationId: notificationId,
+        title: title,
+        body: body,
+        scheduledTime: snoozeUntil,
+        payload: task.id,
+        scheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      );
+    }
   }
 
   static String _titleForOffset(Duration offset, TaskPriority priority) {
@@ -211,5 +278,35 @@ class NotificationService {
       'US/Eastern': 'America/New_York',
     };
     return aliases[timeZoneName] ?? timeZoneName;
+  }
+
+  static Future<void> _scheduleAt({
+    required int notificationId,
+    required String title,
+    required String body,
+    required DateTime scheduledTime,
+    required String payload,
+    required AndroidScheduleMode scheduleMode,
+  }) async {
+    await _notifications.zonedSchedule(
+      notificationId,
+      title,
+      body,
+      tz.TZDateTime.from(scheduledTime, tz.local),
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          'task_reminders',
+          'Task Reminders',
+          channelDescription: 'Reminders for upcoming tasks',
+          importance: Importance.max,
+          priority: Priority.high,
+          actions: _androidSnoozeActions,
+        ),
+        iOS: DarwinNotificationDetails(),
+        macOS: DarwinNotificationDetails(),
+      ),
+      androidScheduleMode: scheduleMode,
+      payload: payload,
+    );
   }
 }

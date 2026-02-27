@@ -1,9 +1,9 @@
-
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/task_model.dart';
 import '../models/task_group_model.dart';
 import '../core/app_constants.dart';
+import 'home_screen_widget_service.dart';
 
 class StorageService {
   static SharedPreferences? _prefs;
@@ -23,13 +23,16 @@ class StorageService {
   static Future<void> saveTasks(List<Task> tasks) async {
     final String data = jsonEncode(tasks.map((e) => e.toJson()).toList());
     await _prefs?.setString(AppConstants.tasksKey, data);
+    await HomeScreenWidgetService.updateWidgets();
   }
 
   // --- Groups ---
   static List<TaskGroup> getGroups() {
     final String? data = _prefs?.getString(AppConstants.groupsKey);
     if (data == null) {
-       return AppConstants.defaultGroups.map((e) => TaskGroup.fromJson(e)).toList();
+      return AppConstants.defaultGroups
+          .map((e) => TaskGroup.fromJson(e))
+          .toList();
     }
     final List decoded = jsonDecode(data);
     return decoded.map((e) => TaskGroup.fromJson(e)).toList();
@@ -49,8 +52,22 @@ class StorageService {
     await _prefs?.setBool(AppConstants.settingsKey, enabled);
   }
 
+  // --- Reminder Presets ---
+  static Map<String, dynamic>? getReminderPresetsMap() {
+    final String? data = _prefs?.getString(AppConstants.reminderPresetsKey);
+    if (data == null || data.isEmpty) return null;
+    return Map<String, dynamic>.from(jsonDecode(data));
+  }
+
+  static Future<void> saveReminderPresetsMap(Map<String, dynamic> data) async {
+    final String encoded = jsonEncode(data);
+    await _prefs?.setString(AppConstants.reminderPresetsKey, encoded);
+    await HomeScreenWidgetService.updateWidgets();
+  }
+
   // --- Global ---
   static Future<void> clearAllData() async {
     await _prefs?.clear();
+    await HomeScreenWidgetService.updateWidgets();
   }
 }

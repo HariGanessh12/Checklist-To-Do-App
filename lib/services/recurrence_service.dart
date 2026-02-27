@@ -22,9 +22,13 @@ class RecurrenceService {
       priority: task.priority,
       dueDate: nextDue,
       isCompleted: false,
+      isPinned: task.isPinned,
       notificationEnabled: task.notificationEnabled,
       recurrence: task.recurrence,
       recurrenceIntervalDays: task.recurrenceIntervalDays,
+      subtasks: task.subtasks
+          .map((subtask) => subtask.copyWith(isCompleted: false))
+          .toList(),
       createdAt: current,
     );
   }

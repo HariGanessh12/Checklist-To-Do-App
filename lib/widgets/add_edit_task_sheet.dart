@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import '../models/task_model.dart';
 import '../models/task_group_model.dart';
+import '../services/task_template_service.dart';
 
 class AddEditTaskSheet extends StatefulWidget {
   final List<TaskGroup> groups;
@@ -26,6 +27,8 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
   late TextEditingController _titleController;
   late TextEditingController _descriptionController;
   late TextEditingController _customRecurrenceController;
+  late List<Subtask> _subtasks;
+  late List<TextEditingController> _subtaskControllers;
   late TaskPriority _priority;
   late TaskRecurrence _recurrence;
   late String _selectedGroupId;
@@ -43,6 +46,10 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
     _customRecurrenceController = TextEditingController(
       text: (widget.taskToEdit?.recurrenceIntervalDays ?? 2).toString(),
     );
+    _subtasks = List<Subtask>.from(widget.taskToEdit?.subtasks ?? const []);
+    _subtaskControllers = _subtasks
+        .map((subtask) => TextEditingController(text: subtask.title))
+        .toList();
     _priority = widget.taskToEdit?.priority ?? TaskPriority.medium;
     _recurrence = widget.taskToEdit?.recurrence ?? TaskRecurrence.none;
     _selectedGroupId =
@@ -59,7 +66,48 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
     _titleController.dispose();
     _descriptionController.dispose();
     _customRecurrenceController.dispose();
+    for (final controller in _subtaskControllers) {
+      controller.dispose();
+    }
     super.dispose();
+  }
+
+  void _addSubtask() {
+    setState(() {
+      _subtasks.add(const Subtask(title: ''));
+      _subtaskControllers.add(TextEditingController());
+    });
+  }
+
+  void _removeSubtask(int index) {
+    setState(() {
+      _subtaskControllers[index].dispose();
+      _subtaskControllers.removeAt(index);
+      _subtasks.removeAt(index);
+    });
+  }
+
+  void _applyTemplate(TaskTemplate template) {
+    for (final controller in _subtaskControllers) {
+      controller.dispose();
+    }
+    setState(() {
+      _titleController.text = template.title;
+      _descriptionController.text = template.description;
+      _priority = template.priority;
+      _recurrence = template.recurrence;
+      _customRecurrenceController.text = (template.recurrenceIntervalDays ?? 2)
+          .toString();
+      _subtasks = template.subtasks
+          .map(
+            (subtask) =>
+                Subtask(title: subtask.title, isCompleted: subtask.isCompleted),
+          )
+          .toList();
+      _subtaskControllers = _subtasks
+          .map((subtask) => TextEditingController(text: subtask.title))
+          .toList();
+    });
   }
 
   Future<void> _pickDateTime() async {
@@ -128,6 +176,25 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
                 letterSpacing: -0.5,
               ),
             ),
+            const SizedBox(height: 12),
+            const Text(
+              "Templates",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: TaskTemplateService.templates
+                  .map(
+                    (template) => ActionChip(
+                      avatar: const Icon(Icons.auto_fix_high_rounded, size: 16),
+                      label: Text(template.name),
+                      onPressed: () => _applyTemplate(template),
+                    ),
+                  )
+                  .toList(),
+            ),
             const SizedBox(height: 24),
             TextField(
               controller: _titleController,
@@ -151,6 +218,68 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
               maxLines: 3,
               minLines: 1,
             ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    "Subtasks",
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: _addSubtask,
+                  icon: const Icon(Icons.add_rounded, size: 18),
+                  label: const Text('Add'),
+                ),
+              ],
+            ),
+            if (_subtasks.isEmpty)
+              Text(
+                'No subtasks yet.',
+                style: TextStyle(color: Colors.grey.shade600),
+              ),
+            if (_subtasks.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              ...List.generate(_subtasks.length, (index) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    children: [
+                      Checkbox(
+                        value: _subtasks[index].isCompleted,
+                        onChanged: (value) {
+                          setState(() {
+                            _subtasks[index] = _subtasks[index].copyWith(
+                              isCompleted: value ?? false,
+                            );
+                          });
+                        },
+                      ),
+                      Expanded(
+                        child: TextField(
+                          controller: _subtaskControllers[index],
+                          decoration: const InputDecoration(
+                            hintText: 'Subtask title',
+                            border: OutlineInputBorder(),
+                            isDense: true,
+                          ),
+                          onChanged: (value) {
+                            _subtasks[index] = _subtasks[index].copyWith(
+                              title: value,
+                            );
+                          },
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => _removeSubtask(index),
+                        icon: const Icon(Icons.close_rounded),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ],
             const Divider(height: 32),
             ListTile(
               contentPadding: EdgeInsets.zero,
@@ -287,6 +416,12 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
                 ),
                 onPressed: () {
                   if (_titleController.text.trim().isEmpty) return;
+                  final normalizedSubtasks = <Subtask>[];
+                  for (var i = 0; i < _subtasks.length; i++) {
+                    final title = _subtaskControllers[i].text.trim();
+                    if (title.isEmpty) continue;
+                    normalizedSubtasks.add(_subtasks[i].copyWith(title: title));
+                  }
                   int? recurrenceIntervalDays;
                   if (_recurrence == TaskRecurrence.custom) {
                     recurrenceIntervalDays = int.tryParse(
@@ -303,6 +438,9 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
                       );
                       return;
                     }
+                  } else {
+                    recurrenceIntervalDays =
+                        widget.taskToEdit?.recurrenceIntervalDays;
                   }
                   final task = Task(
                     id: widget.taskToEdit?.id ?? const Uuid().v4(),
@@ -312,10 +450,12 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
                     priority: _priority,
                     dueDate: _selectedDate,
                     isCompleted: widget.taskToEdit?.isCompleted ?? false,
+                    isPinned: widget.taskToEdit?.isPinned ?? false,
                     notificationEnabled:
                         widget.taskToEdit?.notificationEnabled ?? true,
                     recurrence: _recurrence,
                     recurrenceIntervalDays: recurrenceIntervalDays,
+                    subtasks: normalizedSubtasks,
                     createdAt: widget.taskToEdit?.createdAt ?? DateTime.now(),
                   );
                   widget.onSave(task);

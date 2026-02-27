@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../models/task_group_model.dart';
 import '../models/task_model.dart';
+import 'reminder_presets_page.dart';
 import '../services/notification_service.dart';
 import '../services/storage_service.dart';
 
@@ -67,6 +68,20 @@ class _RemindersPageState extends State<RemindersPage> {
         backgroundColor: const Color(0xFFF4F1F7),
         appBar: AppBar(
           title: const Text('Reminders'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.tune_rounded),
+              tooltip: 'Reminder Presets',
+              onPressed: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const ReminderPresetsPage(),
+                  ),
+                );
+                _loadData();
+              },
+            ),
+          ],
           bottom: const TabBar(
             tabs: [
               Tab(text: 'Reminders On'),

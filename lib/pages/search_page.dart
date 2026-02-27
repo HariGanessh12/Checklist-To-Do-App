@@ -24,6 +24,7 @@ class _SearchPageState extends State<SearchPage> {
     super.initState();
     _allTasks = StorageService.getTasks();
     _groups = StorageService.getGroups();
+    _allTasks.sort(_comparePinnedThenDueDate);
   }
 
   @override
@@ -41,9 +42,17 @@ class _SearchPageState extends State<SearchPage> {
 
     setState(() {
       _results = _allTasks.where((t) {
-        return t.title.toLowerCase().contains(q) || t.description.toLowerCase().contains(q);
-      }).toList();
+        return t.title.toLowerCase().contains(q) ||
+            t.description.toLowerCase().contains(q);
+      }).toList()..sort(_comparePinnedThenDueDate);
     });
+  }
+
+  int _comparePinnedThenDueDate(Task a, Task b) {
+    if (a.isPinned != b.isPinned) {
+      return a.isPinned ? -1 : 1;
+    }
+    return a.dueDate.compareTo(b.dueDate);
   }
 
   TaskGroup? _groupForTask(Task task) {
@@ -68,6 +77,20 @@ class _SearchPageState extends State<SearchPage> {
         behavior: SnackBarBehavior.floating,
       ),
     );
+  }
+
+  void _togglePin(Task task) {
+    final allTasks = StorageService.getTasks();
+    final idx = allTasks.indexWhere((entry) => entry.id == task.id);
+    if (idx == -1) return;
+    allTasks[idx] = task.copyWith(isPinned: !task.isPinned);
+    StorageService.saveTasks(allTasks);
+    _allTasks = allTasks..sort(_comparePinnedThenDueDate);
+    if (_searchController.text.trim().isNotEmpty) {
+      _onSearch(_searchController.text);
+    } else {
+      setState(() {});
+    }
   }
 
   @override
@@ -100,11 +123,17 @@ class _SearchPageState extends State<SearchPage> {
                   fillColor: Colors.grey.shade100,
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
-                    borderSide: const BorderSide(color: Color(0xFF6D54A5), width: 2),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF6D54A5),
+                      width: 2,
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
-                    borderSide: const BorderSide(color: Color(0xFF6D54A5), width: 2),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF6D54A5),
+                      width: 2,
+                    ),
                   ),
                 ),
               ),
@@ -123,7 +152,12 @@ class _SearchPageState extends State<SearchPage> {
                           showGroup: true,
                           onTap: () {},
                           onToggle: () {},
-                          onNotify: task.isCompleted ? null : () => _notifyTask(task),
+                          onPinToggle: task.isCompleted
+                              ? null
+                              : () => _togglePin(task),
+                          onNotify: task.isCompleted
+                              ? null
+                              : () => _notifyTask(task),
                         );
                       },
                     ),
@@ -143,18 +177,27 @@ class _SearchPageState extends State<SearchPage> {
           Container(
             width: 190,
             height: 190,
-            decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.grey.shade200),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.grey.shade200,
+            ),
             alignment: Alignment.center,
             child: Icon(
               hasQuery ? Icons.search_rounded : Icons.auto_awesome_rounded,
               size: 66,
-              color: hasQuery ? const Color(0xFF6D54A5) : const Color(0xFFFFB84D),
+              color: hasQuery
+                  ? const Color(0xFF6D54A5)
+                  : const Color(0xFFFFB84D),
             ),
           ),
           const SizedBox(height: 32),
           const Text(
             'Looking clear!',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF4B4754)),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF4B4754),
+            ),
           ),
           const SizedBox(height: 8),
           Text(
