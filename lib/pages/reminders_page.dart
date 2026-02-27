@@ -155,6 +155,11 @@ class _RemindersPageState extends State<RemindersPage> {
                   'Priority: ${task.priority.name.toUpperCase()}',
                   style: TextStyle(color: Colors.grey.shade700),
                 ),
+                const SizedBox(height: 2),
+                Text(
+                  _recurrenceLabel(task),
+                  style: TextStyle(color: Colors.grey.shade700),
+                ),
                 const SizedBox(height: 6),
                 Text(
                   task.notificationEnabled
@@ -175,5 +180,19 @@ class _RemindersPageState extends State<RemindersPage> {
         );
       },
     );
+  }
+
+  String _recurrenceLabel(Task task) {
+    switch (task.recurrence) {
+      case TaskRecurrence.none:
+        return 'Repeat: None';
+      case TaskRecurrence.daily:
+        return 'Repeat: Daily';
+      case TaskRecurrence.weekly:
+        return 'Repeat: Weekly';
+      case TaskRecurrence.custom:
+        final days = task.recurrenceIntervalDays ?? 1;
+        return 'Repeat: Every $days day${days == 1 ? '' : 's'}';
+    }
   }
 }

@@ -3,6 +3,7 @@ import '../models/task_group_model.dart';
 import '../models/task_model.dart';
 import '../services/storage_service.dart';
 import '../services/notification_service.dart';
+import '../services/recurrence_service.dart';
 import '../widgets/add_edit_task_sheet.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/task_card_widget.dart';
@@ -73,8 +74,15 @@ class _HomePageState extends State<HomePage> {
     final idx = allTasks.indexWhere((t) => t.id == task.id);
     if (idx == -1) return;
     allTasks[idx] = task.copyWith(isCompleted: true);
+    final nextTask = RecurrenceService.nextOccurrenceFor(task);
+    if (nextTask != null) {
+      allTasks.insert(0, nextTask);
+    }
     StorageService.saveTasks(allTasks);
     NotificationService.cancelForTask(task.id);
+    if (nextTask != null) {
+      NotificationService.scheduleForTask(nextTask);
+    }
     _loadData();
   }
 
@@ -181,8 +189,14 @@ class _HomePageState extends State<HomePage> {
         padding: const EdgeInsets.symmetric(horizontal: 14),
         children: [
           _buildChip('All', 'all'),
-          _buildChip('Individual', 'individual', icon: const Icon(Icons.inbox_outlined, size: 16)),
-          ..._groups.map((group) => _buildChip(group.name, group.id, icon: Text(group.icon))),
+          _buildChip(
+            'Individual',
+            'individual',
+            icon: const Icon(Icons.inbox_outlined, size: 16),
+          ),
+          ..._groups.map(
+            (group) => _buildChip(group.name, group.id, icon: Text(group.icon)),
+          ),
         ],
       ),
     );
@@ -205,7 +219,9 @@ class _HomePageState extends State<HomePage> {
         ),
         selectedColor: const Color(0xFF6D54A5),
         backgroundColor: const Color(0xFFF6F4FA),
-        side: BorderSide(color: selected ? Colors.transparent : const Color(0xFFD2C9DE)),
+        side: BorderSide(
+          color: selected ? Colors.transparent : const Color(0xFFD2C9DE),
+        ),
         onSelected: (_) => setState(() => _selectedGroupId = id),
       ),
     );
@@ -219,14 +235,25 @@ class _HomePageState extends State<HomePage> {
           Container(
             width: 190,
             height: 190,
-            decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.grey.shade200),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.grey.shade200,
+            ),
             alignment: Alignment.center,
-            child: const Icon(Icons.auto_awesome_rounded, size: 68, color: Color(0xFFFFB84D)),
+            child: const Icon(
+              Icons.auto_awesome_rounded,
+              size: 68,
+              color: Color(0xFFFFB84D),
+            ),
           ),
           const SizedBox(height: 32),
           const Text(
             'Looking clear!',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF4B4754)),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF4B4754),
+            ),
           ),
           const SizedBox(height: 8),
           Text(

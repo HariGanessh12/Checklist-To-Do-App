@@ -25,7 +25,9 @@ class AddEditTaskSheet extends StatefulWidget {
 class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
   late TextEditingController _titleController;
   late TextEditingController _descriptionController;
+  late TextEditingController _customRecurrenceController;
   late TaskPriority _priority;
+  late TaskRecurrence _recurrence;
   late String _selectedGroupId;
   late DateTime _selectedDate;
 
@@ -38,7 +40,11 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
     _descriptionController = TextEditingController(
       text: widget.taskToEdit?.description ?? '',
     );
+    _customRecurrenceController = TextEditingController(
+      text: (widget.taskToEdit?.recurrenceIntervalDays ?? 2).toString(),
+    );
     _priority = widget.taskToEdit?.priority ?? TaskPriority.medium;
+    _recurrence = widget.taskToEdit?.recurrence ?? TaskRecurrence.none;
     _selectedGroupId =
         widget.taskToEdit?.groupId ??
         widget.initialGroupId ??
@@ -52,6 +58,7 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
+    _customRecurrenceController.dispose();
     super.dispose();
   }
 
@@ -192,6 +199,54 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
                 );
               }).toList(),
             ),
+            const SizedBox(height: 18),
+            DropdownButtonFormField<TaskRecurrence>(
+              initialValue: _recurrence,
+              decoration: InputDecoration(
+                labelText: "Repeat",
+                prefixIcon: const Icon(Icons.repeat_rounded),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+              ),
+              items: const [
+                DropdownMenuItem(
+                  value: TaskRecurrence.none,
+                  child: Text("No Repeat"),
+                ),
+                DropdownMenuItem(
+                  value: TaskRecurrence.daily,
+                  child: Text("Daily"),
+                ),
+                DropdownMenuItem(
+                  value: TaskRecurrence.weekly,
+                  child: Text("Weekly"),
+                ),
+                DropdownMenuItem(
+                  value: TaskRecurrence.custom,
+                  child: Text("Custom (every N days)"),
+                ),
+              ],
+              onChanged: (v) => setState(() => _recurrence = v!),
+            ),
+            if (_recurrence == TaskRecurrence.custom) ...[
+              const SizedBox(height: 12),
+              TextField(
+                controller: _customRecurrenceController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: "Repeat every (days)",
+                  prefixIcon: const Icon(Icons.calendar_month_rounded),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 24),
             DropdownButtonFormField<String>(
               initialValue: _selectedGroupId,
@@ -232,6 +287,23 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
                 ),
                 onPressed: () {
                   if (_titleController.text.trim().isEmpty) return;
+                  int? recurrenceIntervalDays;
+                  if (_recurrence == TaskRecurrence.custom) {
+                    recurrenceIntervalDays = int.tryParse(
+                      _customRecurrenceController.text.trim(),
+                    );
+                    if (recurrenceIntervalDays == null ||
+                        recurrenceIntervalDays < 1) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Custom recurrence must be at least 1 day.',
+                          ),
+                        ),
+                      );
+                      return;
+                    }
+                  }
                   final task = Task(
                     id: widget.taskToEdit?.id ?? const Uuid().v4(),
                     groupId: _selectedGroupId,
@@ -242,6 +314,8 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
                     isCompleted: widget.taskToEdit?.isCompleted ?? false,
                     notificationEnabled:
                         widget.taskToEdit?.notificationEnabled ?? true,
+                    recurrence: _recurrence,
+                    recurrenceIntervalDays: recurrenceIntervalDays,
                     createdAt: widget.taskToEdit?.createdAt ?? DateTime.now(),
                   );
                   widget.onSave(task);

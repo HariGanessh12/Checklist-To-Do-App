@@ -1,5 +1,7 @@
 enum TaskPriority { low, medium, high }
 
+enum TaskRecurrence { none, daily, weekly, custom }
+
 class Task {
   final String id;
   final String groupId;
@@ -9,6 +11,8 @@ class Task {
   final DateTime dueDate;
   final bool isCompleted;
   final bool notificationEnabled;
+  final TaskRecurrence recurrence;
+  final int? recurrenceIntervalDays;
   final DateTime createdAt;
 
   Task({
@@ -20,6 +24,8 @@ class Task {
     required this.dueDate,
     this.isCompleted = false,
     this.notificationEnabled = true,
+    this.recurrence = TaskRecurrence.none,
+    this.recurrenceIntervalDays,
     required this.createdAt,
   });
 
@@ -30,6 +36,8 @@ class Task {
     DateTime? dueDate,
     bool? isCompleted,
     bool? notificationEnabled,
+    TaskRecurrence? recurrence,
+    int? recurrenceIntervalDays,
     String? groupId,
   }) {
     return Task(
@@ -41,6 +49,9 @@ class Task {
       dueDate: dueDate ?? this.dueDate,
       isCompleted: isCompleted ?? this.isCompleted,
       notificationEnabled: notificationEnabled ?? this.notificationEnabled,
+      recurrence: recurrence ?? this.recurrence,
+      recurrenceIntervalDays:
+          recurrenceIntervalDays ?? this.recurrenceIntervalDays,
       createdAt: createdAt,
     );
   }
@@ -55,6 +66,8 @@ class Task {
       'dueDate': dueDate.toIso8601String(),
       'isCompleted': isCompleted,
       'notificationEnabled': notificationEnabled,
+      'recurrence': recurrence.index,
+      'recurrenceIntervalDays': recurrenceIntervalDays,
       'createdAt': createdAt.toIso8601String(),
     };
   }
@@ -69,6 +82,8 @@ class Task {
       dueDate: DateTime.parse(json['dueDate']),
       isCompleted: json['isCompleted'],
       notificationEnabled: json['notificationEnabled'] ?? true,
+      recurrence: TaskRecurrence.values[json['recurrence'] ?? 0],
+      recurrenceIntervalDays: json['recurrenceIntervalDays'],
       createdAt: DateTime.parse(json['createdAt']),
     );
   }

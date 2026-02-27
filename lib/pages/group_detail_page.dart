@@ -3,6 +3,7 @@ import '../models/task_model.dart';
 import '../models/task_group_model.dart';
 import '../services/storage_service.dart';
 import '../services/notification_service.dart';
+import '../services/recurrence_service.dart';
 import '../widgets/add_edit_task_sheet.dart';
 import '../widgets/task_card_widget.dart';
 import '../widgets/task_detail_sheet.dart';
@@ -61,7 +62,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       index,
       (context, animation) => _buildAnimatedItem(removedTask, animation),
     );
-    
+
     final allTasks = StorageService.getTasks();
     allTasks.removeWhere((t) => t.id == task.id);
     StorageService.saveTasks(allTasks);
@@ -90,16 +91,30 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     if (index == -1) return;
 
     final updated = task.copyWith(isCompleted: true);
+    final nextTask = RecurrenceService.nextOccurrenceFor(task);
     setState(() {
       _groupTasks.removeAt(index);
-      _listKey.currentState?.removeItem(index, (context, animation) => _buildAnimatedItem(updated, animation));
+      _listKey.currentState?.removeItem(
+        index,
+        (context, animation) => _buildAnimatedItem(updated, animation),
+      );
+      if (nextTask != null && nextTask.groupId == widget.group.id) {
+        _groupTasks.insert(0, nextTask);
+        _listKey.currentState?.insertItem(0);
+      }
     });
 
     final allTasks = StorageService.getTasks();
     final globalIdx = allTasks.indexWhere((t) => t.id == task.id);
     if (globalIdx != -1) allTasks[globalIdx] = updated;
+    if (nextTask != null) {
+      allTasks.insert(0, nextTask);
+    }
     StorageService.saveTasks(allTasks);
     NotificationService.cancelForTask(task.id);
+    if (nextTask != null) {
+      NotificationService.scheduleForTask(nextTask);
+    }
   }
 
   Future<void> _notifyTask(Task task) async {
@@ -121,7 +136,12 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     return FadeTransition(
       opacity: animation,
       child: SlideTransition(
-        position: animation.drive(Tween(begin: const Offset(0.1, 0), end: Offset.zero).chain(CurveTween(curve: Curves.easeOutCubic))),
+        position: animation.drive(
+          Tween(
+            begin: const Offset(0.1, 0),
+            end: Offset.zero,
+          ).chain(CurveTween(curve: Curves.easeOutCubic)),
+        ),
         child: Padding(
           padding: const EdgeInsets.only(bottom: 8.0),
           child: TaskCardWidget(
@@ -176,7 +196,10 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           children: [
             Text(widget.group.icon),
             const SizedBox(width: 12),
-            Text(widget.group.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text(
+              widget.group.name,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
           ],
         ),
       ),
@@ -206,10 +229,17 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           const SizedBox(height: 16),
           Text(
             "Clear skies in ${widget.group.name}",
-            style: TextStyle(color: Colors.grey.shade400, fontSize: 18, fontWeight: FontWeight.w500),
+            style: TextStyle(
+              color: Colors.grey.shade400,
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+            ),
           ),
           const SizedBox(height: 8),
-          Text("No pending tasks here", style: TextStyle(color: Colors.grey.shade300)),
+          Text(
+            "No pending tasks here",
+            style: TextStyle(color: Colors.grey.shade300),
+          ),
         ],
       ),
     );

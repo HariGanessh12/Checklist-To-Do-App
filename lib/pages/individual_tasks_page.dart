@@ -3,6 +3,7 @@ import '../models/task_model.dart';
 import '../models/task_group_model.dart';
 import '../services/storage_service.dart';
 import '../services/notification_service.dart';
+import '../services/recurrence_service.dart';
 import '../widgets/add_edit_task_sheet.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/task_card_widget.dart';
@@ -29,7 +30,9 @@ class _IndividualTasksPageState extends State<IndividualTasksPage> {
     final all = StorageService.getTasks();
     setState(() {
       _groups = StorageService.getGroups();
-      _tasks = all.where((t) => !t.isCompleted && t.groupId == 'individual').toList();
+      _tasks = all
+          .where((t) => !t.isCompleted && t.groupId == 'individual')
+          .toList();
     });
   }
 
@@ -59,8 +62,15 @@ class _IndividualTasksPageState extends State<IndividualTasksPage> {
     final idx = allTasks.indexWhere((t) => t.id == task.id);
     if (idx == -1) return;
     allTasks[idx] = task.copyWith(isCompleted: true);
+    final nextTask = RecurrenceService.nextOccurrenceFor(task);
+    if (nextTask != null) {
+      allTasks.insert(0, nextTask);
+    }
     StorageService.saveTasks(allTasks);
     NotificationService.cancelForTask(task.id);
+    if (nextTask != null) {
+      NotificationService.scheduleForTask(nextTask);
+    }
     _loadData();
   }
 
@@ -178,12 +188,20 @@ class _IndividualTasksPageState extends State<IndividualTasksPage> {
               color: Colors.grey.shade200,
             ),
             alignment: Alignment.center,
-            child: const Icon(Icons.inbox_rounded, size: 58, color: Color(0xFF4C8ED9)),
+            child: const Icon(
+              Icons.inbox_rounded,
+              size: 58,
+              color: Color(0xFF4C8ED9),
+            ),
           ),
           const SizedBox(height: 30),
           const Text(
             'Looking clear!',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF4B4754)),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF4B4754),
+            ),
           ),
           const SizedBox(height: 8),
           Text(
