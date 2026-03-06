@@ -4,7 +4,9 @@ import '../models/task_group_model.dart';
 import '../models/task_model.dart';
 import '../services/storage_service.dart';
 import '../services/notification_service.dart';
+import '../widgets/app_empty_state.dart';
 import '../widgets/app_bottom_nav.dart';
+import '../widgets/app_page_header.dart';
 import '../widgets/task_card_widget.dart';
 
 class SearchPage extends StatefulWidget {
@@ -501,15 +503,9 @@ class _SearchPageState extends State<SearchPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 18, 16, 8),
-              child: Text(
-                'Find Tasks',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
-              ),
-            ),
+            const AppPageHeader(title: 'Find Tasks'),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
               child: TextField(
                 controller: _searchController,
                 onChanged: _onSearch,
@@ -528,19 +524,19 @@ class _SearchPageState extends State<SearchPage> {
                     ),
                   ),
                   filled: true,
-                  fillColor: Colors.grey.shade100,
+                  fillColor: Theme.of(context).colorScheme.surfaceContainerHigh,
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
                     borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.primary,
-                      width: 2,
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                      width: 1.4,
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
                     borderSide: BorderSide(
                       color: Theme.of(context).colorScheme.primary,
-                      width: 2,
+                      width: 1.8,
                     ),
                   ),
                 ),
@@ -548,7 +544,7 @@ class _SearchPageState extends State<SearchPage> {
             ),
             if (_hasActiveFilters)
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                 child: Row(
                   children: [
                     Expanded(
@@ -623,7 +619,7 @@ class _SearchPageState extends State<SearchPage> {
               child: _results.isEmpty
                   ? _buildEmptyState(hasQuery)
                   : ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 110),
                       itemCount: _results.length,
                       itemBuilder: (context, index) {
                         final task = _results[index];
@@ -652,40 +648,11 @@ class _SearchPageState extends State<SearchPage> {
 
   Widget _buildEmptyState(bool hasQuery) {
     final scheme = Theme.of(context).colorScheme;
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 190,
-            height: 190,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: scheme.surfaceContainerHigh,
-            ),
-            alignment: Alignment.center,
-            child: Icon(
-              hasQuery ? Icons.search_rounded : Icons.auto_awesome_rounded,
-              size: 66,
-              color: hasQuery ? scheme.primary : scheme.tertiary,
-            ),
-          ),
-          const SizedBox(height: 32),
-          Text(
-            'Looking clear!',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: scheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            hasQuery ? 'No tasks match your search.' : 'No tasks found here.',
-            style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant),
-          ),
-        ],
-      ),
+    return AppEmptyState(
+      icon: hasQuery ? Icons.search_rounded : Icons.auto_awesome_rounded,
+      title: 'Looking clear!',
+      message: hasQuery ? 'No tasks match your search.' : 'No tasks found here.',
+      accentColor: hasQuery ? scheme.primary : scheme.tertiary,
     );
   }
 }

@@ -4,6 +4,7 @@ import '../models/task_model.dart';
 import '../services/storage_service.dart';
 import '../widgets/add_edit_group_sheet.dart';
 import '../widgets/app_bottom_nav.dart';
+import '../widgets/app_page_header.dart';
 import 'group_detail_page.dart';
 
 class GroupsPage extends StatefulWidget {
@@ -61,35 +62,32 @@ class _GroupsPageState extends State<GroupsPage> {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Task Groups',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: GridView.builder(
-                  padding: const EdgeInsets.only(bottom: 110),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 14,
-                    crossAxisSpacing: 14,
-                    childAspectRatio: 0.95,
-                  ),
-                  itemCount: _groups.length + 1,
-                  itemBuilder: (context, index) {
-                    if (index == _groups.length) return _buildNewGroupCard();
-                    final group = _groups[index];
-                    return _buildGroupCard(group);
-                  },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const AppPageHeader(
+              title: 'Task Groups',
+              padding: EdgeInsets.fromLTRB(16, 18, 16, 8),
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: GridView.builder(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 110),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 14,
+                  crossAxisSpacing: 14,
+                  childAspectRatio: 0.95,
                 ),
+                itemCount: _groups.length + 1,
+                itemBuilder: (context, index) {
+                  if (index == _groups.length) return _buildNewGroupCard();
+                  final group = _groups[index];
+                  return _buildGroupCard(group);
+                },
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
       bottomNavigationBar: const AppBottomNav(currentTab: AppTab.groups),

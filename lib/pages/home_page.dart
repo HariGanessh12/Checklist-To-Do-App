@@ -7,6 +7,8 @@ import '../services/notification_service.dart';
 import '../services/recurrence_service.dart';
 import '../services/task_completion_service.dart';
 import '../widgets/add_edit_task_sheet.dart';
+import '../widgets/app_empty_state.dart';
+import '../widgets/app_page_header.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/task_card_widget.dart';
 import '../widgets/task_detail_sheet.dart';
@@ -219,29 +221,17 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 18, 16, 4),
-              child: Row(
-                children: [
-                  const Expanded(
-                    child: Text(
-                      'My Tasks',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: 'Calendar View',
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const CalendarPage()),
-                      );
-                    },
-                    icon: const Icon(Icons.calendar_month_rounded),
-                  ),
-                ],
+            AppPageHeader(
+              title: 'My Tasks',
+              padding: const EdgeInsets.fromLTRB(16, 18, 16, 8),
+              trailing: IconButton(
+                tooltip: 'Calendar View',
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const CalendarPage()),
+                  );
+                },
+                icon: const Icon(Icons.calendar_month_rounded),
               ),
             ),
             _buildGroupTabs(),
@@ -250,7 +240,7 @@ class _HomePageState extends State<HomePage> {
               child: visibleTasks.isEmpty
                   ? _buildEmptyState()
                   : ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 110),
                       itemCount: visibleTasks.length,
                       itemBuilder: (context, index) {
                         final task = visibleTasks[index];
@@ -282,7 +272,7 @@ class _HomePageState extends State<HomePage> {
       height: 54,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         children: [
           _buildChip('All', 'all'),
           _buildChip(
@@ -329,7 +319,7 @@ class _HomePageState extends State<HomePage> {
       height: 54,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.fromLTRB(14, 0, 14, 0),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         children: [
           _buildTimeFilterChip(
             label: 'Today',
@@ -381,41 +371,11 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildEmptyState() {
-    final scheme = Theme.of(context).colorScheme;
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 190,
-            height: 190,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: scheme.surfaceContainerHigh,
-            ),
-            alignment: Alignment.center,
-            child: Icon(
-              Icons.auto_awesome_rounded,
-              size: 68,
-              color: scheme.primary,
-            ),
-          ),
-          const SizedBox(height: 32),
-          Text(
-            'Looking clear!',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: scheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'No tasks found here.',
-            style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant),
-          ),
-        ],
-      ),
+    return const AppEmptyState(
+      icon: Icons.auto_awesome_rounded,
+      title: 'Looking clear!',
+      message: 'No tasks found here.',
+      iconSize: 68,
     );
   }
 }

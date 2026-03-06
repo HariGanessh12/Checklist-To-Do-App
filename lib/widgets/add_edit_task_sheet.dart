@@ -158,7 +158,7 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
                 width: 32,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
+                  color: scheme.outlineVariant,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -232,7 +232,7 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
             if (_subtasks.isEmpty)
               Text(
                 'No subtasks yet.',
-                style: TextStyle(color: Colors.grey.shade600),
+                style: TextStyle(color: scheme.onSurfaceVariant),
               ),
             if (_subtasks.isNotEmpty) ...[
               const SizedBox(height: 8),
@@ -269,6 +269,7 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
                       ),
                       const SizedBox(width: 4),
                       IconButton(
+                        tooltip: 'Remove subtask',
                         onPressed: () => _removeSubtask(index),
                         icon: const Icon(Icons.close_rounded),
                       ),
@@ -290,9 +291,9 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.calendar_today_rounded,
-                      color: Color(0xFF006D77),
+                      color: scheme.primary,
                     ),
                     const SizedBox(width: 12),
                     Expanded(

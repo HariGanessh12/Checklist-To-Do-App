@@ -26,8 +26,7 @@ class TaskCardWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final isOverdue =
-        !task.isCompleted && task.dueDate.isBefore(DateTime.now());
+    final isOverdue = !task.isCompleted && task.dueDate.isBefore(DateTime.now());
     final totalSubtasks = task.subtasks.length;
     final completedSubtasks = task.subtasks
         .where((subtask) => subtask.isCompleted)
@@ -63,14 +62,13 @@ class TaskCardWidget extends StatelessWidget {
           child: Row(
             children: [
               IconButton(
+                tooltip: task.isCompleted ? 'Mark as pending' : 'Mark as completed',
                 icon: Icon(
                   task.isCompleted
                       ? Icons.check_circle_rounded
                       : Icons.circle_outlined,
                   size: 28,
-                  color: task.isCompleted
-                      ? Colors.green
-                      : Theme.of(context).colorScheme.primary,
+                  color: task.isCompleted ? Colors.green : scheme.primary,
                 ),
                 onPressed: onToggle,
               ),
@@ -100,6 +98,7 @@ class TaskCardWidget extends StatelessWidget {
                         alignment: Alignment.centerLeft,
                         child: TextButton.icon(
                           onPressed: onPinToggle,
+                          iconAlignment: IconAlignment.start,
                           icon: Icon(
                             task.isPinned
                                 ? Icons.star_rounded
@@ -112,7 +111,7 @@ class TaskCardWidget extends StatelessWidget {
                               horizontal: 8,
                               vertical: 0,
                             ),
-                            minimumSize: const Size(0, 28),
+                            minimumSize: const Size(0, 32),
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             visualDensity: VisualDensity.compact,
                           ),
@@ -148,21 +147,15 @@ class TaskCardWidget extends StatelessWidget {
                         Icon(
                           Icons.access_time_rounded,
                           size: 14,
-                          color: isOverdue
-                              ? Colors.red
-                              : scheme.onSurfaceVariant,
+                          color: isOverdue ? scheme.error : scheme.onSurfaceVariant,
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          DateFormat('MMM d, HH:mm').format(task.dueDate),
+                          DateFormat('MMM d, hh:mm a').format(task.dueDate),
                           style: TextStyle(
                             fontSize: 12,
-                            color: isOverdue
-                                ? Colors.red
-                                : scheme.onSurfaceVariant,
-                            fontWeight: isOverdue
-                                ? FontWeight.bold
-                                : FontWeight.normal,
+                            color: isOverdue ? scheme.error : scheme.onSurfaceVariant,
+                            fontWeight: isOverdue ? FontWeight.bold : FontWeight.normal,
                           ),
                         ),
                       ],
@@ -188,7 +181,7 @@ class TaskCardWidget extends StatelessWidget {
                           Text(
                             '$completedSubtasks/$totalSubtasks',
                             style: TextStyle(
-                              fontSize: 11,
+                              fontSize: 12,
                               fontWeight: FontWeight.w700,
                               color: scheme.onSurfaceVariant,
                             ),
@@ -200,6 +193,7 @@ class TaskCardWidget extends StatelessWidget {
                       const SizedBox(height: 6),
                       TextButton.icon(
                         onPressed: onNotify,
+                        iconAlignment: IconAlignment.start,
                         icon: const Icon(
                           Icons.notifications_active_outlined,
                           size: 16,
@@ -210,7 +204,7 @@ class TaskCardWidget extends StatelessWidget {
                             horizontal: 8,
                             vertical: 0,
                           ),
-                          minimumSize: const Size(0, 28),
+                          minimumSize: const Size(0, 32),
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           visualDensity: VisualDensity.compact,
                         ),
@@ -221,17 +215,20 @@ class TaskCardWidget extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                 decoration: BoxDecoration(
                   color: priorityColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Text(
-                  task.priority.name.toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: priorityColor,
+                child: Semantics(
+                  label: 'Priority ${task.priority.name}',
+                  child: Text(
+                    task.priority.name.toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: priorityColor,
+                    ),
                   ),
                 ),
               ),

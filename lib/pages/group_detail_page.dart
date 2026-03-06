@@ -6,6 +6,7 @@ import '../services/notification_service.dart';
 import '../services/recurrence_service.dart';
 import '../services/task_completion_service.dart';
 import '../widgets/add_edit_task_sheet.dart';
+import '../widgets/app_empty_state.dart';
 import '../widgets/task_card_widget.dart';
 import '../widgets/task_detail_sheet.dart';
 
@@ -297,32 +298,12 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   }
 
   Widget _buildEmptyState() {
-    final scheme = Theme.of(context).colorScheme;
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.checklist_rounded,
-            size: 80,
-            color: scheme.surfaceContainerHighest,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            "Clear skies in ${widget.group.name}",
-            style: TextStyle(
-              color: scheme.onSurfaceVariant,
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            "No pending tasks here",
-            style: TextStyle(color: scheme.onSurfaceVariant),
-          ),
-        ],
-      ),
+    return AppEmptyState(
+      icon: Icons.checklist_rounded,
+      title: 'Clear skies in ${widget.group.name}',
+      message: 'No pending tasks here',
+      circleSize: 170,
+      iconSize: 72,
     );
   }
 }

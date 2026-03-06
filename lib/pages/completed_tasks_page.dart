@@ -3,7 +3,9 @@ import '../models/task_group_model.dart';
 import '../models/task_model.dart';
 import '../services/storage_service.dart';
 import '../services/notification_service.dart';
+import '../widgets/app_empty_state.dart';
 import '../widgets/app_bottom_nav.dart';
+import '../widgets/app_page_header.dart';
 import '../widgets/task_card_widget.dart';
 
 class CompletedTasksPage extends StatefulWidget {
@@ -75,34 +77,26 @@ class _CompletedTasksPageState extends State<CompletedTasksPage> {
       body: SafeArea(
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 18, 16, 8),
-              child: Row(
-                children: [
-                  const Text(
-                    'Finished',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
-                  ),
-                  const Spacer(),
-                if (_completedTasks.isNotEmpty)
-                  TextButton(
-                    onPressed: _clearAll,
-                    child: Text(
-                      'CLEAR ALL',
-                      style: TextStyle(
+            AppPageHeader(
+              title: 'Finished',
+              trailing: _completedTasks.isNotEmpty
+                  ? TextButton(
+                      onPressed: _clearAll,
+                      child: Text(
+                        'CLEAR ALL',
+                        style: TextStyle(
                           color: Theme.of(context).colorScheme.error,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                    ),
-                ],
-              ),
+                    )
+                  : null,
             ),
             Expanded(
               child: _completedTasks.isEmpty
                   ? _buildEmptyState()
                   : ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 110),
                       itemCount: _completedTasks.length,
                       itemBuilder: (context, index) {
                         final task = _completedTasks[index];
@@ -124,41 +118,11 @@ class _CompletedTasksPageState extends State<CompletedTasksPage> {
   }
 
   Widget _buildEmptyState() {
-    final scheme = Theme.of(context).colorScheme;
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 190,
-            height: 190,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: scheme.surfaceContainerHigh,
-            ),
-            alignment: Alignment.center,
-            child: Icon(
-              Icons.emoji_events_rounded,
-              size: 66,
-              color: scheme.tertiary,
-            ),
-          ),
-          const SizedBox(height: 32),
-          Text(
-            'Looking clear!',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: scheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'You haven\'t finished any tasks yet.',
-            style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant),
-          ),
-        ],
-      ),
+    return AppEmptyState(
+      icon: Icons.emoji_events_rounded,
+      title: 'Looking clear!',
+      message: 'You haven\'t finished any tasks yet.',
+      accentColor: Theme.of(context).colorScheme.tertiary,
     );
   }
 }

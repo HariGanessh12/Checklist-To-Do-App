@@ -351,7 +351,7 @@ class _CalendarPageState extends State<CalendarPage> {
             if (compact)
               Text(
                 label,
-                style: TextStyle(fontSize: 10, color: scheme.onSurfaceVariant),
+                style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant),
               ),
             Text(
               '${day.day}',
@@ -436,7 +436,7 @@ class _CalendarPageState extends State<CalendarPage> {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  '${DateFormat('hh:mm a').format(task.dueDate)}  •  ${group == null ? 'Individual' : '${group.icon} ${group.name}'}',
+                  '${DateFormat('hh:mm a').format(task.dueDate)}  -  ${group == null ? 'Individual' : '${group.icon} ${group.name}'}',
                   style: TextStyle(
                     color: scheme.onSurfaceVariant,
                     fontSize: 12,
@@ -451,7 +451,7 @@ class _CalendarPageState extends State<CalendarPage> {
             style: TextStyle(
               color: priorityColor,
               fontWeight: FontWeight.w700,
-              fontSize: 10,
+              fontSize: 11,
             ),
           ),
         ],

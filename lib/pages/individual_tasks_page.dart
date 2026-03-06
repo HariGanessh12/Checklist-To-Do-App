@@ -6,7 +6,9 @@ import '../services/notification_service.dart';
 import '../services/recurrence_service.dart';
 import '../services/task_completion_service.dart';
 import '../widgets/add_edit_task_sheet.dart';
+import '../widgets/app_empty_state.dart';
 import '../widgets/app_bottom_nav.dart';
+import '../widgets/app_page_header.dart';
 import '../widgets/task_card_widget.dart';
 import '../widgets/task_detail_sheet.dart';
 
@@ -165,18 +167,12 @@ class _IndividualTasksPageState extends State<IndividualTasksPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 18, 16, 8),
-              child: Text(
-                'Individual',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
-              ),
-            ),
+            const AppPageHeader(title: 'Individual'),
             Expanded(
               child: _tasks.isEmpty
                   ? _buildEmptyState()
                   : ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 110),
                       itemCount: _tasks.length,
                       itemBuilder: (context, index) {
                         final task = _tasks[index];
@@ -203,41 +199,12 @@ class _IndividualTasksPageState extends State<IndividualTasksPage> {
   }
 
   Widget _buildEmptyState() {
-    final scheme = Theme.of(context).colorScheme;
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 180,
-            height: 180,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: scheme.surfaceContainerHigh,
-            ),
-            alignment: Alignment.center,
-            child: Icon(
-              Icons.inbox_rounded,
-              size: 58,
-              color: scheme.primary,
-            ),
-          ),
-          const SizedBox(height: 30),
-          Text(
-            'Looking clear!',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: scheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'No tasks found here.',
-            style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant),
-          ),
-        ],
-      ),
+    return const AppEmptyState(
+      icon: Icons.inbox_rounded,
+      title: 'Looking clear!',
+      message: 'No tasks found here.',
+      circleSize: 180,
+      iconSize: 58,
     );
   }
 }

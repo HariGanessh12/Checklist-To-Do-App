@@ -3,6 +3,8 @@ import 'reminders_page.dart';
 import 'productivity_stats_page.dart';
 import '../services/storage_service.dart';
 import '../widgets/app_bottom_nav.dart';
+import '../widgets/app_page_header.dart';
+import '../widgets/app_surface_card.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -77,9 +79,9 @@ class _SettingsPageState extends State<SettingsPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Settings',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+              const AppPageHeader(
+                title: 'Settings',
+                padding: EdgeInsets.zero,
               ),
               const SizedBox(height: 16),
               _buildThemeModeCard(),
@@ -141,20 +143,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Widget _buildSwitchCard() {
     final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: scheme.outlineVariant),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x1A000000),
-            blurRadius: 7,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
+    return AppSurfaceCard(
       child: Row(
         children: [
           Expanded(
@@ -181,116 +170,71 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Widget _buildReminderCard(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return InkWell(
-      borderRadius: BorderRadius.circular(24),
+    return AppSurfaceCard(
       onTap: () {
         Navigator.of(
           context,
         ).push(MaterialPageRoute(builder: (_) => const RemindersPage()));
       },
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
-        decoration: BoxDecoration(
-          color: scheme.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: scheme.outlineVariant),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x14000000),
-              blurRadius: 7,
-              offset: Offset(0, 2),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Smart Reminders',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Manage pending alarms and reminder states',
+                  style: TextStyle(color: scheme.onSurfaceVariant),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Smart Reminders',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Manage pending alarms and reminder states',
-                    style: TextStyle(color: scheme.onSurfaceVariant),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
-          ],
-        ),
+          ),
+          Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
+        ],
       ),
     );
   }
 
   Widget _buildStatsCard(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return InkWell(
-      borderRadius: BorderRadius.circular(24),
+    return AppSurfaceCard(
       onTap: () {
         Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => const ProductivityStatsPage()),
         );
       },
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
-        decoration: BoxDecoration(
-          color: scheme.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: scheme.outlineVariant),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x14000000),
-              blurRadius: 7,
-              offset: Offset(0, 2),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Productivity Stats',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Completion rate, streaks, and average delay',
+                  style: TextStyle(color: scheme.onSurfaceVariant),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Productivity Stats',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Completion rate, streaks, and average delay',
-                    style: TextStyle(color: scheme.onSurfaceVariant),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
-          ],
-        ),
+          ),
+          Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
+        ],
       ),
     );
   }
 
   Widget _buildThemeModeCard() {
     final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: scheme.outlineVariant),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x1A000000),
-            blurRadius: 7,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
+    return AppSurfaceCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -6,6 +6,7 @@ import '../models/task_model.dart';
 import 'reminder_presets_page.dart';
 import '../services/notification_service.dart';
 import '../services/storage_service.dart';
+import '../widgets/app_surface_card.dart';
 
 class RemindersPage extends StatefulWidget {
   const RemindersPage({super.key});
@@ -124,74 +125,69 @@ class _RemindersPageState extends State<RemindersPage> {
             ? DateFormat('MMM d, hh:mm a').format(upcoming.first)
             : null;
 
-        return Card(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-            side: BorderSide(color: scheme.outlineVariant),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(14, 10, 12, 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        task.title,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+        return AppSurfaceCard(
+          borderRadius: BorderRadius.circular(18),
+          padding: const EdgeInsets.fromLTRB(14, 10, 12, 10),
+          showShadow: false,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      task.title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    Switch(
-                      value: task.notificationEnabled,
-                      onChanged: (value) => _toggleReminder(task, value),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Due: ${DateFormat('EEE, MMM d - hh:mm a').format(task.dueDate)}',
-                  style: TextStyle(color: scheme.onSurfaceVariant),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  group == null
-                      ? 'Group: Individual'
-                      : 'Group: ${group.icon} ${group.name}',
-                  style: TextStyle(color: scheme.onSurfaceVariant),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Priority: ${task.priority.name.toUpperCase()}',
-                  style: TextStyle(color: scheme.onSurfaceVariant),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  _recurrenceLabel(task),
-                  style: TextStyle(color: scheme.onSurfaceVariant),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  task.notificationEnabled
-                      ? (nextAlarm == null
-                            ? 'No future reminders left'
-                            : 'Next alarm: $nextAlarm (${upcoming.length} pending)')
-                      : 'Reminders are turned off',
-                  style: TextStyle(
-                    color: task.notificationEnabled
-                        ? scheme.primary
-                        : scheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
                   ),
+                  Switch(
+                    value: task.notificationEnabled,
+                    onChanged: (value) => _toggleReminder(task, value),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Due: ${DateFormat('EEE, MMM d - hh:mm a').format(task.dueDate)}',
+                style: TextStyle(color: scheme.onSurfaceVariant),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                group == null
+                    ? 'Group: Individual'
+                    : 'Group: ${group.icon} ${group.name}',
+                style: TextStyle(color: scheme.onSurfaceVariant),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Priority: ${task.priority.name.toUpperCase()}',
+                style: TextStyle(color: scheme.onSurfaceVariant),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                _recurrenceLabel(task),
+                style: TextStyle(color: scheme.onSurfaceVariant),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                task.notificationEnabled
+                    ? (nextAlarm == null
+                          ? 'No future reminders left'
+                          : 'Next alarm: $nextAlarm (${upcoming.length} pending)')
+                    : 'Reminders are turned off',
+                style: TextStyle(
+                  color: task.notificationEnabled
+                      ? scheme.primary
+                      : scheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         );
       },

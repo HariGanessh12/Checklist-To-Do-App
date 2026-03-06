@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/task_group_model.dart';
 import '../services/productivity_stats_service.dart';
 import '../services/storage_service.dart';
+import '../widgets/app_surface_card.dart';
 
 class ProductivityStatsPage extends StatefulWidget {
   const ProductivityStatsPage({super.key});
@@ -63,13 +64,10 @@ class _ProductivityStatsPageState extends State<ProductivityStatsPage> {
           ),
           const SizedBox(height: 8),
           if (_stats.taskStreaks.isEmpty)
-            Container(
+            AppSurfaceCard(
+              showShadow: false,
+              borderRadius: BorderRadius.circular(16),
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: scheme.surfaceContainerHigh,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: scheme.outlineVariant),
-              ),
               child: Text(
                 'No task-specific streaks yet. Enable "Track Streak For This Task" while creating or editing a task.',
                 style: TextStyle(color: scheme.onSurfaceVariant),
@@ -89,14 +87,11 @@ class _ProductivityStatsPageState extends State<ProductivityStatsPage> {
 
   Widget _buildTaskStreakTile(TaskStreakStat stat) {
     final scheme = Theme.of(context).colorScheme;
-    return Container(
+    return AppSurfaceCard(
       margin: const EdgeInsets.only(bottom: 8),
+      showShadow: false,
+      borderRadius: BorderRadius.circular(16),
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: scheme.outlineVariant),
-      ),
       child: Row(
         children: [
           CircleAvatar(
@@ -167,13 +162,10 @@ class _ProductivityStatsPageState extends State<ProductivityStatsPage> {
     required Color color,
   }) {
     final scheme = Theme.of(context).colorScheme;
-    return Container(
+    return AppSurfaceCard(
+      showShadow: false,
+      borderRadius: BorderRadius.circular(16),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: scheme.outlineVariant),
-      ),
       child: Row(
         children: [
           CircleAvatar(
