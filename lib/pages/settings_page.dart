@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'reminders_page.dart';
 import 'productivity_stats_page.dart';
+import 'recycle_bin_page.dart';
 import '../services/storage_service.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/app_page_header.dart';
@@ -74,66 +75,73 @@ class _SettingsPageState extends State<SettingsPage> {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const AppPageHeader(
-                title: 'Settings',
-                padding: EdgeInsets.zero,
-              ),
-              const SizedBox(height: 16),
-              _buildThemeModeCard(),
-              const SizedBox(height: 14),
-              _buildSwitchCard(),
-              const SizedBox(height: 14),
-              _buildStatsCard(context),
-              const SizedBox(height: 14),
-              _buildReminderCard(context),
-              const SizedBox(height: 28),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Text(
-                  'APP CONTROL',
-                  style: TextStyle(
-                    letterSpacing: 3.0,
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.w700,
-                  ),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const AppPageHeader(
+                  title: 'Settings',
+                  padding: EdgeInsets.zero,
                 ),
-              ),
-              const SizedBox(height: 22),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.errorContainer,
-                    foregroundColor: Theme.of(context).colorScheme.onErrorContainer,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
+                const SizedBox(height: 16),
+                _buildThemeModeCard(),
+                const SizedBox(height: 14),
+                _buildSwitchCard(),
+                const SizedBox(height: 14),
+                _buildStatsCard(context),
+                const SizedBox(height: 14),
+                _buildReminderCard(context),
+                const SizedBox(height: 14),
+                _buildRecycleBinCard(context),
+                const SizedBox(height: 28),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(
+                    'APP CONTROL',
+                    style: TextStyle(
+                      letterSpacing: 3.0,
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w700,
                     ),
-                    padding: const EdgeInsets.symmetric(vertical: 22),
-                  ),
-                  onPressed: _factoryReset,
-                  child: const Text(
-                    'Factory Reset',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
                   ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              Center(
-                child: Text(
-                  'BUILD 2024.12.01 - V1.5.0',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 1.0,
+                const SizedBox(height: 22),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor:
+                          Theme.of(context).colorScheme.errorContainer,
+                      foregroundColor:
+                          Theme.of(context).colorScheme.onErrorContainer,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 22),
+                    ),
+                    onPressed: _factoryReset,
+                    child: const Text(
+                      'Factory Reset',
+                      style:
+                          TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                    ),
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 24),
+                Center(
+                  child: Text(
+                    'BUILD 2024.12.01 - V1.5.0',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -221,6 +229,38 @@ class _SettingsPageState extends State<SettingsPage> {
                 const SizedBox(height: 4),
                 Text(
                   'Completion rate, streaks, and average delay',
+                  style: TextStyle(color: scheme.onSurfaceVariant),
+                ),
+              ],
+            ),
+          ),
+          Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecycleBinCard(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return AppSurfaceCard(
+      onTap: () {
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const RecycleBinPage()));
+      },
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Recycle Bin',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'View manually deleted tasks and task groups',
                   style: TextStyle(color: scheme.onSurfaceVariant),
                 ),
               ],

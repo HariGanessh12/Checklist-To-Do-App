@@ -25,6 +25,15 @@ class TaskCardWidget extends StatelessWidget {
     this.showToggle = true,
   });
 
+  String _formatDurationCompact(Duration duration) {
+    final totalMinutes = duration.inMinutes.abs();
+    final hours = totalMinutes ~/ 60;
+    final minutes = totalMinutes % 60;
+    if (hours == 0) return '${minutes}m';
+    if (minutes == 0) return '${hours}h';
+    return '${hours}h ${minutes}m';
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -98,9 +107,6 @@ class TaskCardWidget extends StatelessWidget {
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
-                        decoration: task.isCompleted
-                            ? TextDecoration.lineThrough
-                            : null,
                         color: task.isCompleted
                             ? scheme.onSurfaceVariant
                             : scheme.onSurface,
@@ -109,57 +115,174 @@ class TaskCardWidget extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        if (showGroup && group != null) ...[
-                          Text(
-                            group!.icon,
-                            style: const TextStyle(fontSize: 12),
+                    if (task.isCompleted) ...[
+                      if (showGroup && group != null)
+                        Row(
+                          children: [
+                            Text(
+                              group!.icon,
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                group!.name,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: scheme.onSurfaceVariant,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              width: 4,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: scheme.outlineVariant,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ],
+                        ),
+                      const SizedBox(height: 3),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 6,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withValues(alpha: 0.14),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.check_circle_rounded,
+                                  size: 13,
+                                  color: Colors.green,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  completedAt == null
+                                      ? 'Completed'
+                                      : 'Completed • ${DateFormat('MMM d, hh:mm a').format(completedAt)}',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.green,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (dueDate != null && completedAt != null)
+                            Builder(
+                              builder: (context) {
+                                final delta = completedAt.difference(dueDate);
+                                if (delta.inMinutes == 0) {
+                                  return Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: scheme.primary.withValues(alpha: 0.12),
+                                      borderRadius: BorderRadius.circular(999),
+                                    ),
+                                    child: Text(
+                                      'On time',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                        color: scheme.primary,
+                                      ),
+                                    ),
+                                  );
+                                }
+                                final isLate = delta.isNegative == false;
+                                final label = isLate ? 'Late' : 'Early';
+                                final tone = isLate ? scheme.error : Colors.green;
+                                return Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: tone.withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  child: Text(
+                                    '$label by ${_formatDurationCompact(delta)}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: tone,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                        ],
+                      ),
+                    ] else
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          if (showGroup && group != null) ...[
+                            Text(
+                              group!.icon,
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              group!.name,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: scheme.onSurfaceVariant,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              width: 4,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: scheme.outlineVariant,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                          Icon(
+                            Icons.access_time_rounded,
+                            size: 14,
+                            color: isOverdue ? scheme.error : scheme.onSurfaceVariant,
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            group!.name,
+                            dueDate == null
+                                ? 'No due date'
+                                : DateFormat('MMM d, hh:mm a').format(dueDate),
                             style: TextStyle(
                               fontSize: 12,
-                              color: scheme.onSurfaceVariant,
-                              fontWeight: FontWeight.bold,
+                              color: isOverdue ? scheme.error : scheme.onSurfaceVariant,
+                              fontWeight: isOverdue ? FontWeight.bold : FontWeight.normal,
                             ),
+                            softWrap: true,
                           ),
-                          const SizedBox(width: 8),
-                          Container(
-                            width: 4,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: scheme.outlineVariant,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
                         ],
-                        Icon(
-                          task.isCompleted
-                              ? Icons.check_circle_outline_rounded
-                              : Icons.access_time_rounded,
-                          size: 14,
-                          color: isOverdue ? scheme.error : scheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          task.isCompleted
-                              ? (completedAt == null
-                                    ? 'Completed'
-                                    : 'Completed ${DateFormat('MMM d, hh:mm a').format(completedAt)}')
-                              : (dueDate == null
-                                    ? 'No due date'
-                                    : DateFormat('MMM d, hh:mm a').format(dueDate)),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isOverdue ? scheme.error : scheme.onSurfaceVariant,
-                            fontWeight: isOverdue ? FontWeight.bold : FontWeight.normal,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
                     if (totalSubtasks > 0) ...[
                       const SizedBox(height: 8),
                       Row(
@@ -192,7 +315,9 @@ class TaskCardWidget extends StatelessWidget {
                     if (!task.isCompleted &&
                         (onNotify != null || onPinToggle != null)) ...[
                       const SizedBox(height: 6),
-                      Row(
+                      Wrap(
+                        spacing: 4,
+                        runSpacing: 4,
                         children: [
                           if (onPinToggle != null)
                             TextButton.icon(
@@ -216,7 +341,6 @@ class TaskCardWidget extends StatelessWidget {
                               ),
                             ),
                           if (onNotify != null) ...[
-                            if (onPinToggle != null) const SizedBox(width: 4),
                             TextButton.icon(
                               onPressed: onNotify,
                               iconAlignment: IconAlignment.start,

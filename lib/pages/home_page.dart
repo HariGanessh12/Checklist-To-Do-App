@@ -24,7 +24,7 @@ class _HomePageState extends State<HomePage> {
   List<Task> _tasks = [];
   List<TaskGroup> _groups = [];
   String _selectedGroupId = 'all';
-  TaskTimeFilter _selectedTimeFilter = TaskTimeFilter.today;
+  TaskTimeFilter _selectedTimeFilter = TaskTimeFilter.all;
 
   @override
   void initState() {
@@ -68,6 +68,10 @@ class _HomePageState extends State<HomePage> {
     final tomorrowStart = todayStart.add(const Duration(days: 1));
 
     switch (_selectedTimeFilter) {
+      case TaskTimeFilter.all:
+        return true;
+      case TaskTimeFilter.streak:
+        return task.streakEnabled;
       case TaskTimeFilter.today:
         if (task.dueDate == null) return true;
         return !task.dueDate!.isBefore(now) &&
@@ -89,6 +93,10 @@ class _HomePageState extends State<HomePage> {
     final source = _groupFilteredTasks;
 
     switch (filter) {
+      case TaskTimeFilter.all:
+        return source.length;
+      case TaskTimeFilter.streak:
+        return source.where((task) => task.streakEnabled).length;
       case TaskTimeFilter.today:
         return source
             .where(
@@ -330,6 +338,16 @@ class _HomePageState extends State<HomePage> {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         children: [
           _buildTimeFilterChip(
+            label: 'All',
+            count: _countForFilter(TaskTimeFilter.all),
+            filter: TaskTimeFilter.all,
+          ),
+          _buildTimeFilterChip(
+            label: 'Streak',
+            count: _countForFilter(TaskTimeFilter.streak),
+            filter: TaskTimeFilter.streak,
+          ),
+          _buildTimeFilterChip(
             label: 'Today',
             count: _countForFilter(TaskTimeFilter.today),
             filter: TaskTimeFilter.today,
@@ -388,4 +406,4 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-enum TaskTimeFilter { today, upcoming, overdue }
+enum TaskTimeFilter { all, streak, today, upcoming, overdue }

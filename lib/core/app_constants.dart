@@ -5,6 +5,8 @@ class AppConstants {
   static const String settingsKey = "m3_settings_storage";
   static const String themeModeKey = "m3_theme_mode_storage";
   static const String reminderPresetsKey = "m3_reminder_presets_storage";
+  static const String recycleBinTasksKey = "m3_recycle_bin_tasks_storage";
+  static const String recycleBinGroupsKey = "m3_recycle_bin_groups_storage";
 
   static final List<Map<String, dynamic>> defaultGroups = [
     {

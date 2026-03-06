@@ -8,12 +8,14 @@ class AddEditTaskSheet extends StatefulWidget {
   final List<TaskGroup> groups;
   final Function(Task) onSave;
   final Task? taskToEdit;
+  final String? initialGroupId;
 
   const AddEditTaskSheet({
     super.key,
     required this.groups,
     required this.onSave,
     this.taskToEdit,
+    this.initialGroupId,
   });
 
   @override
@@ -56,8 +58,12 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
     }
     final hasPersonalGroup =
         widget.groups.where((group) => group.id == 'personal').isNotEmpty;
+    final hasInitialGroup = widget.initialGroupId != null &&
+        widget.groups.any((group) => group.id == widget.initialGroupId);
     _selectedGroupId = widget.taskToEdit?.groupId ??
-        (hasPersonalGroup ? 'personal' : widget.groups.first.id);
+        (hasInitialGroup
+            ? widget.initialGroupId!
+            : (hasPersonalGroup ? 'personal' : widget.groups.first.id));
     _selectedDate = widget.taskToEdit?.dueDate;
   }
 

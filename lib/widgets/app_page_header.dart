@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 class AppPageHeader extends StatelessWidget {
   final String title;
   final String? subtitle;
+  final Widget? leading;
   final Widget? trailing;
   final EdgeInsetsGeometry padding;
 
@@ -10,6 +11,7 @@ class AppPageHeader extends StatelessWidget {
     super.key,
     required this.title,
     this.subtitle,
+    this.leading,
     this.trailing,
     this.padding = const EdgeInsets.fromLTRB(16, 18, 16, 8),
   });
@@ -22,6 +24,10 @@ class AppPageHeader extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (leading != null) ...[
+            leading!,
+            const SizedBox(width: 8),
+          ],
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

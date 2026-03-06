@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/task_group_model.dart';
 import '../models/task_model.dart';
+import '../services/notification_service.dart';
 import '../services/storage_service.dart';
 import '../widgets/add_edit_group_sheet.dart';
 import '../widgets/app_bottom_nav.dart';
@@ -55,6 +56,66 @@ class _GroupsPageState extends State<GroupsPage> {
         },
       ),
     );
+  }
+
+  Future<void> _deleteGroup(TaskGroup group) async {
+    if (_groups.length <= 1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('At least one group must remain.')),
+      );
+      return;
+    }
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete group?'),
+        content: Text(
+          'If you delete "${group.name}", all tasks in this group will be deleted.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('CANCEL'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('DELETE'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    final allGroups = StorageService.getGroups();
+    final allTasks = StorageService.getTasks();
+    final removedTasks = allTasks
+        .where((task) => task.groupId == group.id)
+        .toList(growable: false);
+    final remainingTasks = allTasks
+        .where((task) => task.groupId != group.id)
+        .toList(growable: false);
+    allGroups.removeWhere((entry) => entry.id == group.id);
+
+    await StorageService.addTasksToRecycleBin(removedTasks);
+    await StorageService.addGroupToRecycleBin(group);
+    await StorageService.saveTasks(remainingTasks);
+    await StorageService.saveGroups(allGroups);
+
+    for (final task in removedTasks) {
+      await NotificationService.cancelForTask(task.id);
+    }
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Deleted "${group.name}" and ${removedTasks.length} task${removedTasks.length == 1 ? '' : 's'}.',
+        ),
+      ),
+    );
+    _loadData();
   }
 
   @override
@@ -121,15 +182,36 @@ class _GroupsPageState extends State<GroupsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 72,
-              height: 62,
-              decoration: BoxDecoration(
-                color: Color(group.colorValue).withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(18),
-              ),
-              alignment: Alignment.center,
-              child: Text(group.icon, style: const TextStyle(fontSize: 30)),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 72,
+                  height: 62,
+                  decoration: BoxDecoration(
+                    color: Color(group.colorValue).withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(group.icon, style: const TextStyle(fontSize: 30)),
+                ),
+                const Spacer(),
+                PopupMenuButton<String>(
+                  tooltip: 'Group actions',
+                  icon: const Icon(Icons.more_vert_rounded),
+                  onSelected: (value) {
+                    if (value == 'delete') {
+                      _deleteGroup(group);
+                    }
+                  },
+                  itemBuilder: (context) => const [
+                    PopupMenuItem<String>(
+                      value: 'delete',
+                      child: Text('Delete Group'),
+                    ),
+                  ],
+                ),
+              ],
             ),
             const Spacer(),
             Text(

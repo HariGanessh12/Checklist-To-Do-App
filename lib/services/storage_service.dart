@@ -66,6 +66,29 @@ class StorageService {
     await HomeScreenWidgetService.updateWidgets();
   }
 
+  // --- Recycle Bin Tasks ---
+  static List<Task> getRecycleBinTasks() {
+    final String? data = _prefs?.getString(AppConstants.recycleBinTasksKey);
+    if (data == null) return [];
+    final List decoded = jsonDecode(data);
+    return decoded.map((entry) => Task.fromJson(entry)).toList();
+  }
+
+  static Future<void> saveRecycleBinTasks(List<Task> tasks) async {
+    final String data = jsonEncode(tasks.map((e) => e.toJson()).toList());
+    await _prefs?.setString(AppConstants.recycleBinTasksKey, data);
+  }
+
+  static Future<void> addTasksToRecycleBin(List<Task> tasks) async {
+    if (tasks.isEmpty) return;
+    final existing = getRecycleBinTasks();
+    final byId = <String, Task>{for (final task in existing) task.id: task};
+    for (final task in tasks) {
+      byId[task.id] = task;
+    }
+    await saveRecycleBinTasks(byId.values.toList());
+  }
+
   // --- Groups ---
   static List<TaskGroup> getGroups() {
     final String? data = _prefs?.getString(AppConstants.groupsKey);
@@ -81,6 +104,26 @@ class StorageService {
   static Future<void> saveGroups(List<TaskGroup> groups) async {
     final String data = jsonEncode(groups.map((e) => e.toJson()).toList());
     await _prefs?.setString(AppConstants.groupsKey, data);
+  }
+
+  // --- Recycle Bin Groups ---
+  static List<TaskGroup> getRecycleBinGroups() {
+    final String? data = _prefs?.getString(AppConstants.recycleBinGroupsKey);
+    if (data == null) return [];
+    final List decoded = jsonDecode(data);
+    return decoded.map((entry) => TaskGroup.fromJson(entry)).toList();
+  }
+
+  static Future<void> saveRecycleBinGroups(List<TaskGroup> groups) async {
+    final String data = jsonEncode(groups.map((e) => e.toJson()).toList());
+    await _prefs?.setString(AppConstants.recycleBinGroupsKey, data);
+  }
+
+  static Future<void> addGroupToRecycleBin(TaskGroup group) async {
+    final existing = getRecycleBinGroups();
+    final filtered = existing.where((entry) => entry.id != group.id).toList();
+    filtered.insert(0, group);
+    await saveRecycleBinGroups(filtered);
   }
 
   // --- Settings ---

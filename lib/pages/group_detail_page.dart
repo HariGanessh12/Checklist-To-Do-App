@@ -262,6 +262,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       backgroundColor: Colors.transparent,
       builder: (context) => AddEditTaskSheet(
         groups: StorageService.getGroups(),
+        initialGroupId: task == null ? widget.group.id : null,
         taskToEdit: task,
         onSave: (saved) => _saveTask(saved, isNew: task == null),
       ),
@@ -293,7 +294,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                 return _buildAnimatedItem(_groupTasks[index], animation);
               },
             ),
-      floatingActionButton: FloatingActionButton.large(
+      floatingActionButton: FloatingActionButton(
         onPressed: () => _showTaskSheet(),
         child: const Icon(Icons.add_task_rounded),
       ),

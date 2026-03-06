@@ -17,6 +17,7 @@ class SearchPage extends StatefulWidget {
 }
 
 class _SearchPageState extends State<SearchPage> {
+  static const Duration _restoreWindow = Duration(hours: 6);
   final _searchController = TextEditingController();
   List<Task> _allTasks = [];
   List<TaskGroup> _groups = [];
@@ -85,6 +86,28 @@ class _SearchPageState extends State<SearchPage> {
         ),
       ),
     );
+  }
+
+  bool _canRestore(Task task, {DateTime? now}) {
+    final completedAt = task.completedAt;
+    if (completedAt == null) return false;
+    final current = now ?? DateTime.now();
+    return current.difference(completedAt) <= _restoreWindow;
+  }
+
+  void _restoreTask(Task task) {
+    final allTasks = StorageService.getTasks();
+    final index = allTasks.indexWhere((t) => t.id == task.id);
+    if (index == -1) return;
+    final restoredTask = task.copyWith(
+      isCompleted: false,
+      clearCompletedAt: true,
+    );
+    allTasks[index] = restoredTask;
+    StorageService.saveTasks(allTasks);
+    NotificationService.scheduleForTask(restoredTask);
+    _allTasks = allTasks..sort(_compareByDueDateAscending);
+    _applySearchAndFilters();
   }
 
   void _togglePin(Task task) {
@@ -630,12 +653,14 @@ class _SearchPageState extends State<SearchPage> {
                       itemCount: _results.length,
                       itemBuilder: (context, index) {
                         final task = _results[index];
+                        final canRestore = task.isCompleted && _canRestore(task);
                         return TaskCardWidget(
                           task: task,
                           group: _groupForTask(task),
                           showGroup: true,
                           onTap: () {},
-                          onToggle: () {},
+                          showToggle: canRestore,
+                          onToggle: canRestore ? () => _restoreTask(task) : () {},
                           onPinToggle: task.isCompleted
                               ? null
                               : () => _togglePin(task),
