@@ -89,6 +89,15 @@ class StorageService {
     await saveRecycleBinTasks(byId.values.toList());
   }
 
+  static Future<void> removeTasksFromRecycleBinById(List<String> taskIds) async {
+    if (taskIds.isEmpty) return;
+    final idSet = taskIds.toSet();
+    final filtered = getRecycleBinTasks()
+        .where((task) => !idSet.contains(task.id))
+        .toList();
+    await saveRecycleBinTasks(filtered);
+  }
+
   // --- Groups ---
   static List<TaskGroup> getGroups() {
     final String? data = _prefs?.getString(AppConstants.groupsKey);
@@ -123,6 +132,17 @@ class StorageService {
     final existing = getRecycleBinGroups();
     final filtered = existing.where((entry) => entry.id != group.id).toList();
     filtered.insert(0, group);
+    await saveRecycleBinGroups(filtered);
+  }
+
+  static Future<void> removeGroupsFromRecycleBinById(
+    List<String> groupIds,
+  ) async {
+    if (groupIds.isEmpty) return;
+    final idSet = groupIds.toSet();
+    final filtered = getRecycleBinGroups()
+        .where((group) => !idSet.contains(group.id))
+        .toList();
     await saveRecycleBinGroups(filtered);
   }
 

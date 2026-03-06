@@ -143,11 +143,12 @@ class _HomePageState extends State<HomePage> {
     _loadData();
   }
 
-  void _deleteTask(Task task) {
+  Future<void> _deleteTask(Task task) async {
     final allTasks = StorageService.getTasks();
     allTasks.removeWhere((t) => t.id == task.id);
-    StorageService.saveTasks(allTasks);
-    NotificationService.cancelForTask(task.id);
+    await StorageService.addTasksToRecycleBin([task]);
+    await StorageService.saveTasks(allTasks);
+    await NotificationService.cancelForTask(task.id);
     _loadData();
   }
 

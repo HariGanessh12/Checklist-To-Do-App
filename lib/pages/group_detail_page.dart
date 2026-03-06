@@ -101,7 +101,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     NotificationService.scheduleForTask(task);
   }
 
-  void _deleteTask(Task task) {
+  Future<void> _deleteTask(Task task) async {
     final index = _groupTasks.indexWhere((t) => t.id == task.id);
     if (index == -1) return;
 
@@ -116,19 +116,22 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
 
     final allTasks = StorageService.getTasks();
     allTasks.removeWhere((t) => t.id == task.id);
-    StorageService.saveTasks(allTasks);
-    NotificationService.cancelForTask(task.id);
+    await StorageService.addTasksToRecycleBin([task]);
+    await StorageService.saveTasks(allTasks);
+    await NotificationService.cancelForTask(task.id);
+    if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Deleted "${task.title}"'),
         action: SnackBarAction(
           label: "UNDO",
-          onPressed: () {
+          onPressed: () async {
             final restored = StorageService.getTasks();
             restored.insert(0, task);
-            StorageService.saveTasks(restored);
-            NotificationService.scheduleForTask(task);
+            await StorageService.saveTasks(restored);
+            await StorageService.removeTasksFromRecycleBinById([task.id]);
+            await NotificationService.scheduleForTask(task);
             _loadData();
           },
         ),

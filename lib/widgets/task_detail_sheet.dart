@@ -17,6 +17,33 @@ class TaskDetailSheet extends StatelessWidget {
     required this.onDelete,
   });
 
+  Future<void> _confirmDelete(BuildContext context) async {
+    final scheme = Theme.of(context).colorScheme;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete task?'),
+        content: Text('Delete "${task.title}" permanently?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('CANCEL'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: scheme.errorContainer,
+              foregroundColor: scheme.onErrorContainer,
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('DELETE'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+    onDelete();
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -183,7 +210,7 @@ class TaskDetailSheet extends StatelessWidget {
                     backgroundColor: scheme.errorContainer,
                     foregroundColor: scheme.onErrorContainer,
                   ),
-                  onPressed: onDelete,
+                  onPressed: () => _confirmDelete(context),
                   icon: const Icon(Icons.delete_rounded),
                   label: const Text("Delete"),
                 ),

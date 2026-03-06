@@ -53,16 +53,18 @@ class _CompletedTasksPageState extends State<CompletedTasksPage> {
     _loadTasks();
   }
 
-  void _clearAll() {
+  Future<void> _clearAll() async {
     final allTasks = StorageService.getTasks();
+    final removedTasks = allTasks.where((t) => t.isCompleted).toList();
     final completedIds = allTasks
         .where((t) => t.isCompleted)
         .map((t) => t.id)
         .toList();
     allTasks.removeWhere((t) => t.isCompleted);
-    StorageService.saveTasks(allTasks);
+    await StorageService.addTasksToRecycleBin(removedTasks);
+    await StorageService.saveTasks(allTasks);
     for (final taskId in completedIds) {
-      NotificationService.cancelForTask(taskId);
+      await NotificationService.cancelForTask(taskId);
     }
     _loadTasks();
   }

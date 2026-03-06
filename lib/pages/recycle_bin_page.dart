@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/task_group_model.dart';
 import '../models/task_model.dart';
+import '../services/notification_service.dart';
 import '../services/storage_service.dart';
 import '../widgets/app_empty_state.dart';
 
@@ -27,6 +28,138 @@ class _RecycleBinPageState extends State<RecycleBinPage> {
       _deletedTasks = StorageService.getRecycleBinTasks();
       _deletedGroups = StorageService.getRecycleBinGroups();
     });
+  }
+
+  Future<void> _restoreTask(Task task) async {
+    final groups = StorageService.getGroups();
+    if (groups.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No task groups available to restore into.')),
+      );
+      return;
+    }
+
+    final originalGroupExists = groups.any((group) => group.id == task.groupId);
+    String selectedGroupId = originalGroupExists ? task.groupId : groups.first.id;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            title: const Text('Restore task?'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Restore "${task.title}"?'),
+                if (!originalGroupExists) ...[
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Original group was deleted. Choose a group to restore this task:',
+                  ),
+                  const SizedBox(height: 10),
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedGroupId,
+                    items: groups
+                        .map(
+                          (group) => DropdownMenuItem<String>(
+                            value: group.id,
+                            child: Text('${group.icon} ${group.name}'),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setDialogState(() => selectedGroupId = value);
+                    },
+                  ),
+                ],
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('CANCEL'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('RESTORE'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (confirm != true) return;
+
+    final allTasks = StorageService.getTasks();
+    final restored = originalGroupExists
+        ? task
+        : task.copyWith(groupId: selectedGroupId);
+    final existingIndex = allTasks.indexWhere((entry) => entry.id == restored.id);
+    if (existingIndex == -1) {
+      allTasks.insert(0, restored);
+    } else {
+      allTasks[existingIndex] = restored;
+    }
+
+    await StorageService.saveTasks(allTasks);
+    await StorageService.removeTasksFromRecycleBinById([task.id]);
+    if (!restored.isCompleted && restored.notificationEnabled) {
+      await NotificationService.scheduleForTask(restored);
+    }
+    _loadData();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Restored "${restored.title}".')),
+    );
+  }
+
+  Future<void> _restoreGroup(TaskGroup group) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Restore group?'),
+        content: Text('Restore "${group.name}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('CANCEL'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('RESTORE'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    final groups = StorageService.getGroups();
+    final exists = groups.any((entry) => entry.id == group.id);
+    if (exists) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'A group with id "${group.id}" already exists. Delete it first to restore this one.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    groups.add(group);
+    await StorageService.saveGroups(groups);
+    await StorageService.removeGroupsFromRecycleBinById([group.id]);
+    _loadData();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Restored group "${group.name}".')),
+    );
   }
 
   @override
@@ -86,12 +219,24 @@ class _RecycleBinPageState extends State<RecycleBinPage> {
                   ? 'No due date'
                   : 'Due ${DateFormat('MMM d, hh:mm a').format(task.dueDate!)}',
             ),
-            trailing: Text(
-              task.priority.name.toUpperCase(),
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                color: Theme.of(context).colorScheme.primary,
-              ),
+            onTap: () => _restoreTask(task),
+            trailing: Wrap(
+              spacing: 2,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text(
+                  task.priority.name.toUpperCase(),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Restore task',
+                  onPressed: () => _restoreTask(task),
+                  icon: const Icon(Icons.restore_from_trash_rounded),
+                ),
+              ],
             ),
           ),
         );
@@ -125,6 +270,12 @@ class _RecycleBinPageState extends State<RecycleBinPage> {
               child: Text(group.icon),
             ),
             title: Text(group.name),
+            onTap: () => _restoreGroup(group),
+            trailing: IconButton(
+              tooltip: 'Restore group',
+              onPressed: () => _restoreGroup(group),
+              icon: const Icon(Icons.restore_from_trash_rounded),
+            ),
           ),
         );
       },

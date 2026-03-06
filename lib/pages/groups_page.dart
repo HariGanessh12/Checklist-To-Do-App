@@ -79,6 +79,10 @@ class _GroupsPageState extends State<GroupsPage> {
             child: const Text('CANCEL'),
           ),
           FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.errorContainer,
+              foregroundColor: Theme.of(context).colorScheme.onErrorContainer,
+            ),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('DELETE'),
           ),
