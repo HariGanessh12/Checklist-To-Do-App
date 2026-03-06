@@ -37,7 +37,6 @@ class _CalendarPageState extends State<CalendarPage> {
   }
 
   TaskGroup? _groupForTask(Task task) {
-    if (task.groupId == 'individual') return null;
     if (_groups.isEmpty) return null;
     return _groups.firstWhere(
       (group) => group.id == task.groupId,
@@ -52,15 +51,17 @@ class _CalendarPageState extends State<CalendarPage> {
 
   int _taskCountForDate(DateTime date) {
     final day = _dateOnly(date);
-    return _tasks.where((task) => _dateOnly(task.dueDate) == day).length;
+    return _tasks
+        .where((task) => task.dueDate != null && _dateOnly(task.dueDate!) == day)
+        .length;
   }
 
   List<Task> _tasksForSelectedDate() {
     final day = _dateOnly(_selectedDate);
     final result = _tasks
-        .where((task) => _dateOnly(task.dueDate) == day)
+        .where((task) => task.dueDate != null && _dateOnly(task.dueDate!) == day)
         .toList();
-    result.sort((a, b) => a.dueDate.compareTo(b.dueDate));
+    result.sort((a, b) => a.dueDate!.compareTo(b.dueDate!));
     return result;
   }
 
@@ -436,7 +437,7 @@ class _CalendarPageState extends State<CalendarPage> {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  '${DateFormat('hh:mm a').format(task.dueDate)}  -  ${group == null ? 'Individual' : '${group.icon} ${group.name}'}',
+                  '${DateFormat('hh:mm a').format(task.dueDate!)}  -  ${group == null ? 'Individual' : '${group.icon} ${group.name}'}',
                   style: TextStyle(
                     color: scheme.onSurfaceVariant,
                     fontSize: 12,

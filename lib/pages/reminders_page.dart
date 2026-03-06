@@ -33,7 +33,6 @@ class _RemindersPageState extends State<RemindersPage> {
   }
 
   TaskGroup? _groupForTask(Task task) {
-    if (task.groupId == 'individual') return null;
     if (_groups.isEmpty) return null;
     return _groups.firstWhere(
       (g) => g.id == task.groupId,
@@ -151,11 +150,13 @@ class _RemindersPageState extends State<RemindersPage> {
                   ),
                 ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                'Due: ${DateFormat('EEE, MMM d - hh:mm a').format(task.dueDate)}',
-                style: TextStyle(color: scheme.onSurfaceVariant),
-              ),
+                const SizedBox(height: 4),
+                Text(
+                  task.dueDate == null
+                      ? 'Due: No due date'
+                      : 'Due: ${DateFormat('EEE, MMM d - hh:mm a').format(task.dueDate!)}',
+                  style: TextStyle(color: scheme.onSurfaceVariant),
+                ),
               const SizedBox(height: 2),
               Text(
                 group == null

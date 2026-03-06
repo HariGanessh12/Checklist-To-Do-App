@@ -3,6 +3,7 @@ import '../models/task_model.dart';
 class TaskCompletionService {
   static bool canCompleteNow(Task task, {DateTime? now}) {
     if (task.recurrence == TaskRecurrence.none) return true;
+    if (task.dueDate == null) return false;
     final current = now ?? DateTime.now();
 
     switch (task.recurrence) {
@@ -10,12 +11,12 @@ class TaskCompletionService {
         return true;
       case TaskRecurrence.daily:
       case TaskRecurrence.custom:
-        return _isSameDay(current, task.dueDate);
+        return _isSameDay(current, task.dueDate!);
       case TaskRecurrence.weekly:
-        return _startOfWeek(current) == _startOfWeek(task.dueDate);
+        return _startOfWeek(current) == _startOfWeek(task.dueDate!);
       case TaskRecurrence.monthly:
-        return current.year == task.dueDate.year &&
-            current.month == task.dueDate.month;
+        return current.year == task.dueDate!.year &&
+            current.month == task.dueDate!.month;
     }
   }
 

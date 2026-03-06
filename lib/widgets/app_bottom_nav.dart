@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import '../pages/completed_tasks_page.dart';
 import '../pages/groups_page.dart';
 import '../pages/home_page.dart';
-import '../pages/individual_tasks_page.dart';
 import '../pages/search_page.dart';
 import '../pages/settings_page.dart';
 
-enum AppTab { tasks, individual, groups, done, search, more }
+enum AppTab { tasks, groups, done, search, more }
 
 class AppBottomNav extends StatelessWidget {
   final AppTab currentTab;
@@ -20,9 +19,6 @@ class AppBottomNav extends StatelessWidget {
     switch (tab) {
       case AppTab.tasks:
         page = const HomePage();
-        break;
-      case AppTab.individual:
-        page = const IndividualTasksPage();
         break;
       case AppTab.groups:
         page = const GroupsPage();
@@ -58,11 +54,6 @@ class AppBottomNav extends StatelessWidget {
           icon: Icon(Icons.check_box_outlined),
           selectedIcon: Icon(Icons.check_box_rounded),
           label: 'Tasks',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.inbox_outlined),
-          selectedIcon: Icon(Icons.inbox_rounded),
-          label: 'Individual',
         ),
         NavigationDestination(
           icon: Icon(Icons.grid_view_outlined),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/task_group_model.dart';
+import '../models/task_model.dart';
 import '../services/productivity_stats_service.dart';
 import '../services/storage_service.dart';
 import '../widgets/app_surface_card.dart';
@@ -52,6 +53,7 @@ class _ProductivityStatsPageState extends State<ProductivityStatsPage> {
             value: _formatDelay(_stats.averageDelayHours),
             icon: Icons.schedule_rounded,
             color: const Color(0xFF3A7CA5),
+            onTap: _showAverageDelayDialog,
           ),
           const SizedBox(height: 12),
           Text(
@@ -143,7 +145,6 @@ class _ProductivityStatsPageState extends State<ProductivityStatsPage> {
   }
 
   String _groupLabel(String groupId) {
-    if (groupId == 'individual') return 'Individual';
     TaskGroup? group;
     for (final entry in _groups) {
       if (entry.id == groupId) {
@@ -160,12 +161,14 @@ class _ProductivityStatsPageState extends State<ProductivityStatsPage> {
     required String value,
     required IconData icon,
     required Color color,
+    VoidCallback? onTap,
   }) {
     final scheme = Theme.of(context).colorScheme;
     return AppSurfaceCard(
       showShadow: false,
       borderRadius: BorderRadius.circular(16),
       padding: const EdgeInsets.all(16),
+      onTap: onTap,
       child: Row(
         children: [
           CircleAvatar(
@@ -210,4 +213,92 @@ class _ProductivityStatsPageState extends State<ProductivityStatsPage> {
     if (hours < 0) return '$label early';
     return '0.0h on time';
   }
+
+  Future<void> _showAverageDelayDialog() async {
+    final tasks = StorageService.getTasks();
+    final entries = tasks
+        .where((task) => task.completedAt != null && task.dueDate != null)
+        .map((task) {
+          final seconds =
+              task.completedAt!.difference(task.dueDate!).inSeconds;
+          return _TaskDelayEntry(task: task, delaySeconds: seconds);
+        })
+        .toList()
+      ..sort((a, b) => b.task.completedAt!.compareTo(a.task.completedAt!));
+
+    if (!mounted) return;
+    final scheme = Theme.of(context).colorScheme;
+    await showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Task Delay Details'),
+          content: SizedBox(
+            width: 420,
+            child: entries.isEmpty
+                ? Text(
+                    'No completed tasks with due dates yet.',
+                    style: TextStyle(color: scheme.onSurfaceVariant),
+                  )
+                : ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: entries.length,
+                    separatorBuilder: (_, _) => const Divider(height: 12),
+                    itemBuilder: (context, index) {
+                      final entry = entries[index];
+                      return Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              entry.task.title,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            _formatDelayDuration(entry.delaySeconds),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: entry.delaySeconds > 0
+                                  ? scheme.error
+                                  : scheme.primary,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  String _formatDelayDuration(int totalSeconds) {
+    final absSeconds = totalSeconds.abs();
+    final days = absSeconds ~/ Duration.secondsPerDay;
+    final hours = (absSeconds % Duration.secondsPerDay) ~/ Duration.secondsPerHour;
+    final mins =
+        (absSeconds % Duration.secondsPerHour) ~/ Duration.secondsPerMinute;
+    final secs = absSeconds % Duration.secondsPerMinute;
+    final timeLabel = '${days}d ${hours}h ${mins}m ${secs}s';
+    if (totalSeconds > 0) return '$timeLabel late';
+    if (totalSeconds < 0) return '$timeLabel early';
+    return 'On time';
+  }
+}
+
+class _TaskDelayEntry {
+  final Task task;
+  final int delaySeconds;
+
+  const _TaskDelayEntry({required this.task, required this.delaySeconds});
 }

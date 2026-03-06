@@ -114,8 +114,9 @@ class ProductivityStatsService {
     final delays = <double>[];
     for (final task in completedTasks) {
       final completedAt = task.completedAt;
-      if (completedAt == null) continue;
-      final hours = completedAt.difference(task.dueDate).inMinutes / 60.0;
+      final dueDate = task.dueDate;
+      if (completedAt == null || dueDate == null) continue;
+      final hours = completedAt.difference(dueDate).inMinutes / 60.0;
       delays.add(hours);
     }
     if (delays.isEmpty) return 0.0;

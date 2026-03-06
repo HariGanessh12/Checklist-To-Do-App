@@ -28,12 +28,13 @@ class Subtask {
 }
 
 class Task {
+  static const Object _unsetDueDate = Object();
   final String id;
   final String groupId;
   final String title;
   final String description;
   final TaskPriority priority;
-  final DateTime dueDate;
+  final DateTime? dueDate;
   final bool isCompleted;
   final DateTime? completedAt;
   final bool streakEnabled;
@@ -50,7 +51,7 @@ class Task {
     required this.title,
     this.description = '',
     this.priority = TaskPriority.medium,
-    required this.dueDate,
+    this.dueDate,
     this.isCompleted = false,
     this.completedAt,
     this.streakEnabled = false,
@@ -66,7 +67,7 @@ class Task {
     String? title,
     String? description,
     TaskPriority? priority,
-    DateTime? dueDate,
+    Object? dueDate = _unsetDueDate,
     bool? isCompleted,
     DateTime? completedAt,
     bool clearCompletedAt = false,
@@ -84,7 +85,9 @@ class Task {
       title: title ?? this.title,
       description: description ?? this.description,
       priority: priority ?? this.priority,
-      dueDate: dueDate ?? this.dueDate,
+      dueDate: identical(dueDate, _unsetDueDate)
+          ? this.dueDate
+          : dueDate as DateTime?,
       isCompleted: isCompleted ?? this.isCompleted,
       completedAt: clearCompletedAt ? null : (completedAt ?? this.completedAt),
       streakEnabled: streakEnabled ?? this.streakEnabled,
@@ -105,7 +108,7 @@ class Task {
       'title': title,
       'description': description,
       'priority': priority.index,
-      'dueDate': dueDate.toIso8601String(),
+      'dueDate': dueDate?.toIso8601String(),
       'isCompleted': isCompleted,
       'completedAt': completedAt?.toIso8601String(),
       'streakEnabled': streakEnabled,
@@ -125,7 +128,7 @@ class Task {
       title: json['title'],
       description: json['description'],
       priority: TaskPriority.values[json['priority']],
-      dueDate: DateTime.parse(json['dueDate']),
+      dueDate: json['dueDate'] == null ? null : DateTime.parse(json['dueDate']),
       isCompleted: json['isCompleted'],
       completedAt: json['completedAt'] == null
           ? null

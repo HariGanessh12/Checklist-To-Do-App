@@ -29,6 +29,9 @@ class AppTheme {
         color: Colors.white,
         margin: const EdgeInsets.only(bottom: 12),
       ),
+      snackBarTheme: const SnackBarThemeData(
+        behavior: SnackBarBehavior.fixed,
+      ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: lightPrimaryColor,
         foregroundColor: Colors.white,
@@ -83,6 +86,9 @@ class AppTheme {
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         margin: const EdgeInsets.only(bottom: 12),
+      ),
+      snackBarTheme: const SnackBarThemeData(
+        behavior: SnackBarBehavior.fixed,
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: darkPrimaryColor,

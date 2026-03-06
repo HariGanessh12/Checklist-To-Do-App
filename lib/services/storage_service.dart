@@ -26,11 +26,38 @@ class StorageService {
     if (data == null) return [];
     final List decoded = jsonDecode(data);
     final tasks = decoded.map((e) => Task.fromJson(e)).toList();
-    final rolled = RecurrenceService.rollOverMissedDailyTasks(tasks);
+    final migrated = _migrateIndividualTasksToPersonal(tasks);
+    final pruned = _pruneOldCompletedTasks(migrated);
+    final rolled = RecurrenceService.rollOverMissedDailyTasks(pruned);
     if (!identical(tasks, rolled)) {
       saveTasks(rolled);
     }
     return rolled;
+  }
+
+  static List<Task> _migrateIndividualTasksToPersonal(List<Task> tasks) {
+    var changed = false;
+    final migrated = tasks.map((task) {
+      if (task.groupId != 'individual') return task;
+      changed = true;
+      return task.copyWith(groupId: 'personal');
+    }).toList();
+    return changed ? migrated : tasks;
+  }
+
+  static List<Task> _pruneOldCompletedTasks(List<Task> tasks, {DateTime? now}) {
+    final current = now ?? DateTime.now();
+    final cutoff = current.subtract(const Duration(days: 10));
+    var changed = false;
+    final filtered = tasks.where((task) {
+      if (!task.isCompleted) return true;
+      final completedAt = task.completedAt;
+      if (completedAt == null) return true;
+      final keep = !completedAt.isBefore(cutoff);
+      if (!keep) changed = true;
+      return keep;
+    }).toList();
+    return changed ? filtered : tasks;
   }
 
   static Future<void> saveTasks(List<Task> tasks) async {

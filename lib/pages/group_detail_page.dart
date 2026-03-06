@@ -63,7 +63,12 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     if (a.isPinned != b.isPinned) {
       return a.isPinned ? -1 : 1;
     }
-    return a.dueDate.compareTo(b.dueDate);
+    final aDue = a.dueDate;
+    final bDue = b.dueDate;
+    if (aDue == null && bDue == null) return 0;
+    if (aDue == null) return 1;
+    if (bDue == null) return -1;
+    return aDue.compareTo(bDue);
   }
 
   void _saveTask(Task task, {bool isNew = true}) {
@@ -117,7 +122,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Deleted "${task.title}"'),
-        behavior: SnackBarBehavior.floating,
         action: SnackBarAction(
           label: "UNDO",
           onPressed: () {
@@ -190,7 +194,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
               ? 'Scheduled $count reminder${count > 1 ? 's' : ''} for "${task.title}"'
               : 'No future reminder time left for "${task.title}"',
         ),
-        behavior: SnackBarBehavior.floating,
       ),
     );
   }

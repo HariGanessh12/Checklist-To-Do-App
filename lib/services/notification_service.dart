@@ -96,7 +96,9 @@ class NotificationService {
     await init();
     await cancelForTask(task.id);
 
-    if (task.isCompleted || !task.notificationEnabled) return 0;
+    if (task.isCompleted || !task.notificationEnabled) {
+      return 0;
+    }
 
     final now = DateTime.now();
     var scheduledCount = 0;
@@ -110,8 +112,41 @@ class NotificationService {
         ? AndroidScheduleMode.exactAllowWhileIdle
         : AndroidScheduleMode.inexactAllowWhileIdle;
 
+    if (task.streakEnabled) {
+      final scheduledTime = _streakReminderTime(task, now);
+      if (scheduledTime != null && !scheduledTime.isBefore(now)) {
+        const slot = 0;
+        final notificationId = _notificationId(task.id, slot);
+        const title = 'Streak Task Reminder';
+        final body = 'Task: ${task.title}';
+        try {
+          await _scheduleAt(
+            notificationId: notificationId,
+            title: title,
+            body: body,
+            scheduledTime: scheduledTime,
+            payload: task.id,
+            scheduleMode: scheduleMode,
+          );
+        } on PlatformException {
+          await _scheduleAt(
+            notificationId: notificationId,
+            title: title,
+            body: body,
+            scheduledTime: scheduledTime,
+            payload: task.id,
+            scheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          );
+        }
+        scheduledCount = 1;
+      }
+      return scheduledCount;
+    }
+
+    if (task.dueDate == null) return 0;
+
     for (var i = 0; i < offsets.length; i++) {
-      final scheduledTime = task.dueDate.add(offsets[i]);
+      final scheduledTime = task.dueDate!.add(offsets[i]);
       if (scheduledTime.isBefore(now)) continue;
 
       final notificationId = _notificationId(task.id, i);
@@ -152,13 +187,35 @@ class NotificationService {
   }
 
   static List<DateTime> upcomingReminderTimes(Task task, {DateTime? now}) {
-    if (task.isCompleted || !task.notificationEnabled) return const [];
+    if (task.isCompleted || !task.notificationEnabled) {
+      return const [];
+    }
     final current = now ?? DateTime.now();
+    if (task.streakEnabled) {
+      final time = _streakReminderTime(task, current);
+      if (time == null || time.isBefore(current)) return const [];
+      return [time];
+    }
+    if (task.dueDate == null) return const [];
     return ReminderPresetService.getOffsets(task.priority)
-        .map((offset) => task.dueDate.add(offset))
+        .map((offset) => task.dueDate!.add(offset))
         .where((time) => !time.isBefore(current))
         .toList()
       ..sort();
+  }
+
+  static DateTime? _streakReminderTime(Task task, DateTime now) {
+    final dueDate = task.dueDate;
+    if (dueDate != null) {
+      final oneHourBefore = dueDate.subtract(const Duration(hours: 1));
+      if (oneHourBefore.isAfter(now)) return oneHourBefore;
+      if (dueDate.isAfter(now)) return now.add(const Duration(seconds: 5));
+      return null;
+    }
+
+    final todayEightPm = DateTime(now.year, now.month, now.day, 20);
+    if (todayEightPm.isAfter(now)) return todayEightPm;
+    return todayEightPm.add(const Duration(days: 1));
   }
 
   static Future<void> handleNotificationResponse(

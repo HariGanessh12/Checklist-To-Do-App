@@ -54,7 +54,12 @@ class _HomePageState extends State<HomePage> {
     if (a.isPinned != b.isPinned) {
       return a.isPinned ? -1 : 1;
     }
-    return a.dueDate.compareTo(b.dueDate);
+    final aDue = a.dueDate;
+    final bDue = b.dueDate;
+    if (aDue == null && bDue == null) return 0;
+    if (aDue == null) return 1;
+    if (bDue == null) return -1;
+    return aDue.compareTo(bDue);
   }
 
   bool _matchesTimeFilter(Task task) {
@@ -64,13 +69,16 @@ class _HomePageState extends State<HomePage> {
 
     switch (_selectedTimeFilter) {
       case TaskTimeFilter.today:
-        return !task.dueDate.isBefore(now) &&
-            !task.dueDate.isBefore(todayStart) &&
-            task.dueDate.isBefore(tomorrowStart);
+        if (task.dueDate == null) return true;
+        return !task.dueDate!.isBefore(now) &&
+            !task.dueDate!.isBefore(todayStart) &&
+            task.dueDate!.isBefore(tomorrowStart);
       case TaskTimeFilter.upcoming:
-        return !task.dueDate.isBefore(tomorrowStart);
+        if (task.dueDate == null) return false;
+        return !task.dueDate!.isBefore(tomorrowStart);
       case TaskTimeFilter.overdue:
-        return task.dueDate.isBefore(now);
+        if (task.dueDate == null) return false;
+        return task.dueDate!.isBefore(now);
     }
   }
 
@@ -85,22 +93,28 @@ class _HomePageState extends State<HomePage> {
         return source
             .where(
               (task) =>
-                  !task.dueDate.isBefore(now) &&
-                  !task.dueDate.isBefore(todayStart) &&
-                  task.dueDate.isBefore(tomorrowStart),
+                  task.dueDate == null ||
+                  (!task.dueDate!.isBefore(now) &&
+                      !task.dueDate!.isBefore(todayStart) &&
+                      task.dueDate!.isBefore(tomorrowStart)),
             )
             .length;
       case TaskTimeFilter.upcoming:
         return source
-            .where((task) => !task.dueDate.isBefore(tomorrowStart))
+            .where(
+              (task) =>
+                  task.dueDate != null &&
+                  !task.dueDate!.isBefore(tomorrowStart),
+            )
             .length;
       case TaskTimeFilter.overdue:
-        return source.where((task) => task.dueDate.isBefore(now)).length;
+        return source
+            .where((task) => task.dueDate != null && task.dueDate!.isBefore(now))
+            .length;
     }
   }
 
   TaskGroup? _groupForTask(Task task) {
-    if (task.groupId == 'individual') return null;
     if (_groups.isEmpty) return null;
     return _groups.firstWhere(
       (g) => g.id == task.groupId,
@@ -174,7 +188,6 @@ class _HomePageState extends State<HomePage> {
               ? 'Scheduled $count reminder${count > 1 ? 's' : ''} for "${task.title}"'
               : 'No future reminder time left for "${task.title}"',
         ),
-        behavior: SnackBarBehavior.floating,
       ),
     );
   }
@@ -275,11 +288,6 @@ class _HomePageState extends State<HomePage> {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         children: [
           _buildChip('All', 'all'),
-          _buildChip(
-            'Individual',
-            'individual',
-            icon: const Icon(Icons.inbox_outlined, size: 16),
-          ),
           ..._groups.map(
             (group) => _buildChip(group.name, group.id, icon: Text(group.icon)),
           ),

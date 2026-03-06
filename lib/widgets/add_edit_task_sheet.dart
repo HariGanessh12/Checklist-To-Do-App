@@ -8,14 +8,12 @@ class AddEditTaskSheet extends StatefulWidget {
   final List<TaskGroup> groups;
   final Function(Task) onSave;
   final Task? taskToEdit;
-  final String? initialGroupId;
 
   const AddEditTaskSheet({
     super.key,
     required this.groups,
     required this.onSave,
     this.taskToEdit,
-    this.initialGroupId,
   });
 
   @override
@@ -32,7 +30,7 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
   late TaskRecurrence _recurrence;
   late bool _streakEnabled;
   late String _selectedGroupId;
-  late DateTime _selectedDate;
+  DateTime? _selectedDate;
 
   @override
   void initState() {
@@ -53,13 +51,14 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
     _priority = widget.taskToEdit?.priority ?? TaskPriority.medium;
     _recurrence = widget.taskToEdit?.recurrence ?? TaskRecurrence.none;
     _streakEnabled = widget.taskToEdit?.streakEnabled ?? false;
-    _selectedGroupId =
-        widget.taskToEdit?.groupId ??
-        widget.initialGroupId ??
-        widget.groups.first.id;
-    _selectedDate =
-        widget.taskToEdit?.dueDate ??
-        DateTime.now().add(const Duration(hours: 1));
+    if (_streakEnabled) {
+      _recurrence = TaskRecurrence.daily;
+    }
+    final hasPersonalGroup =
+        widget.groups.where((group) => group.id == 'personal').isNotEmpty;
+    _selectedGroupId = widget.taskToEdit?.groupId ??
+        (hasPersonalGroup ? 'personal' : widget.groups.first.id);
+    _selectedDate = widget.taskToEdit?.dueDate;
   }
 
   @override
@@ -91,9 +90,10 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
   Future<void> _pickDateTime() async {
     final now = DateTime.now();
     final firstAllowedDate = DateTime(now.year - 5, now.month, now.day);
+    final initialDate = _selectedDate ?? now;
     final DateTime? date = await showDatePicker(
       context: context,
-      initialDate: _selectedDate,
+      initialDate: initialDate,
       firstDate: firstAllowedDate,
       lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
     );
@@ -103,7 +103,7 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
     if (!mounted) return;
     final TimeOfDay? time = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay.fromDateTime(_selectedDate),
+      initialTime: TimeOfDay.fromDateTime(_selectedDate ?? now),
     );
 
     if (time == null) return;
@@ -306,42 +306,57 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            DateFormat(
-                              'EEEE, MMM d - hh:mm a',
-                            ).format(_selectedDate),
+                            _selectedDate == null
+                                ? 'No due date'
+                                : DateFormat(
+                                    'EEEE, MMM d - hh:mm a',
+                                  ).format(_selectedDate!),
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
-                              color: _selectedDate.isBefore(DateTime.now())
-                                  ? Colors.red
-                                  : scheme.onSurface,
+                              color: _selectedDate == null
+                                  ? scheme.onSurfaceVariant
+                                  : (_selectedDate!.isBefore(DateTime.now())
+                                        ? Colors.red
+                                        : scheme.onSurface),
                             ),
                           ),
-                          const SizedBox(height: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _selectedDate.isBefore(DateTime.now())
-                                  ? Colors.red.withValues(alpha: 0.12)
-                                  : scheme.primary.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: Text(
-                              _dueDateContextLabel(_selectedDate),
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: _selectedDate.isBefore(DateTime.now())
-                                    ? Colors.red
-                                    : scheme.primary,
+                          if (_selectedDate != null) ...[
+                            const SizedBox(height: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _selectedDate!.isBefore(DateTime.now())
+                                    ? Colors.red.withValues(alpha: 0.12)
+                                    : scheme.primary.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Text(
+                                _dueDateContextLabel(_selectedDate!),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: _selectedDate!.isBefore(DateTime.now())
+                                      ? Colors.red
+                                      : scheme.primary,
+                                ),
                               ),
                             ),
-                          ),
+                          ],
                         ],
                       ),
                     ),
+                    if (_selectedDate != null)
+                      IconButton(
+                        tooltip: 'Clear due date',
+                        onPressed: () => setState(() => _selectedDate = null),
+                        icon: Icon(
+                          Icons.close_rounded,
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
                     Icon(
                       Icons.chevron_right_rounded,
                       color: scheme.onSurfaceVariant,
@@ -415,8 +430,20 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
                   child: Text("Monthly"),
                 ),
               ],
-              onChanged: (v) => setState(() => _recurrence = v!),
+              onChanged: _streakEnabled
+                  ? null
+                  : (v) => setState(() => _recurrence = v!),
             ),
+            if (_streakEnabled) ...[
+              const SizedBox(height: 6),
+              Text(
+                'Streak-enabled tasks are automatically set to Daily.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ],
             if (_recurrence == TaskRecurrence.custom) ...[
               const SizedBox(height: 12),
               TextField(
@@ -442,7 +469,12 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
                 'Shows a dedicated streak in Productivity Stats.',
               ),
               value: _streakEnabled,
-              onChanged: (value) => setState(() => _streakEnabled = value),
+              onChanged: (value) => setState(() {
+                _streakEnabled = value;
+                if (value) {
+                  _recurrence = TaskRecurrence.daily;
+                }
+              }),
             ),
             const SizedBox(height: 24),
             DropdownButtonFormField<String>(
@@ -459,10 +491,6 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
                 ),
               ),
               items: [
-                const DropdownMenuItem(
-                  value: 'individual',
-                  child: Text("Individual"),
-                ),
                 ...widget.groups.map(
                   (g) => DropdownMenuItem(
                     value: g.id,
@@ -524,7 +552,13 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
                           streakEnabled: _streakEnabled,
                           notificationEnabled:
                               widget.taskToEdit?.notificationEnabled ?? true,
-                          recurrence: _recurrence,
+                          recurrence: _selectedDate == null
+                              ? (_streakEnabled
+                                    ? TaskRecurrence.daily
+                                    : TaskRecurrence.none)
+                              : (_streakEnabled
+                                    ? TaskRecurrence.daily
+                                    : _recurrence),
                           recurrenceIntervalDays: recurrenceIntervalDays,
                           subtasks: normalizedSubtasks,
                           createdAt: widget.taskToEdit?.createdAt ?? DateTime.now(),

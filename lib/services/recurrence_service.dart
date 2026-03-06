@@ -16,7 +16,10 @@ class RecurrenceService {
       if (task.isCompleted || task.recurrence != TaskRecurrence.daily) {
         return task;
       }
-      if (!task.dueDate.isBefore(todayStart)) {
+      if (task.dueDate == null) {
+        return task;
+      }
+      if (!task.dueDate!.isBefore(todayStart)) {
         return task;
       }
 
@@ -25,11 +28,11 @@ class RecurrenceService {
         todayStart.year,
         todayStart.month,
         todayStart.day,
-        task.dueDate.hour,
-        task.dueDate.minute,
-        task.dueDate.second,
-        task.dueDate.millisecond,
-        task.dueDate.microsecond,
+        task.dueDate!.hour,
+        task.dueDate!.minute,
+        task.dueDate!.second,
+        task.dueDate!.millisecond,
+        task.dueDate!.microsecond,
       );
 
       return task.copyWith(
@@ -44,10 +47,12 @@ class RecurrenceService {
   }
 
   static Task? nextOccurrenceFor(Task task, {DateTime? now}) {
-    if (task.recurrence == TaskRecurrence.none) return null;
+    if (task.recurrence == TaskRecurrence.none || task.dueDate == null) {
+      return null;
+    }
 
     final current = now ?? DateTime.now();
-    var nextDue = _advance(task.dueDate, task);
+    var nextDue = _advance(task.dueDate!, task);
 
     while (!nextDue.isAfter(current)) {
       nextDue = _advance(nextDue, task);

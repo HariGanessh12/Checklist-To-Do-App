@@ -20,7 +20,9 @@ class TaskDetailSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final isOverdue = !task.isCompleted && task.dueDate.isBefore(DateTime.now());
+    final dueDate = task.dueDate;
+    final isOverdue =
+        !task.isCompleted && dueDate != null && dueDate.isBefore(DateTime.now());
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -134,7 +136,9 @@ class TaskDetailSheet extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                DateFormat('EEEE, MMM dd - hh:mm a').format(task.dueDate),
+                dueDate == null
+                    ? 'No due date'
+                    : DateFormat('EEEE, MMM dd - hh:mm a').format(dueDate),
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   color: isOverdue ? scheme.error : scheme.onSurface,

@@ -11,6 +11,7 @@ class TaskCardWidget extends StatelessWidget {
   final VoidCallback? onPinToggle;
   final VoidCallback? onNotify;
   final bool showGroup;
+  final bool showToggle;
 
   const TaskCardWidget({
     super.key,
@@ -21,12 +22,16 @@ class TaskCardWidget extends StatelessWidget {
     this.onPinToggle,
     this.onNotify,
     this.showGroup = false,
+    this.showToggle = true,
   });
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final isOverdue = !task.isCompleted && task.dueDate.isBefore(DateTime.now());
+    final dueDate = task.dueDate;
+    final completedAt = task.completedAt;
+    final isOverdue =
+        !task.isCompleted && dueDate != null && dueDate.isBefore(DateTime.now());
     final totalSubtasks = task.subtasks.length;
     final completedSubtasks = task.subtasks
         .where((subtask) => subtask.isCompleted)
@@ -58,21 +63,32 @@ class TaskCardWidget extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(24),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
           child: Row(
             children: [
-              IconButton(
-                tooltip: task.isCompleted ? 'Mark as pending' : 'Mark as completed',
-                icon: Icon(
-                  task.isCompleted
-                      ? Icons.check_circle_rounded
-                      : Icons.circle_outlined,
-                  size: 28,
-                  color: task.isCompleted ? Colors.green : scheme.primary,
-                ),
-                onPressed: onToggle,
-              ),
-              const SizedBox(width: 12),
+              if (showToggle)
+                IconButton(
+                  tooltip: task.isCompleted
+                      ? 'Mark as pending'
+                      : 'Mark as completed',
+                  style: IconButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    minimumSize: const Size(34, 34),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  icon: Icon(
+                    task.isCompleted
+                        ? Icons.check_circle_rounded
+                        : Icons.circle_outlined,
+                    size: 28,
+                    color: task.isCompleted ? Colors.green : scheme.primary,
+                  ),
+                  onPressed: onToggle,
+                )
+              else
+                const SizedBox(width: 34, height: 34),
+              const SizedBox(width: 6),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -93,30 +109,6 @@ class TaskCardWidget extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-                    if (!task.isCompleted && onPinToggle != null)
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: TextButton.icon(
-                          onPressed: onPinToggle,
-                          iconAlignment: IconAlignment.start,
-                          icon: Icon(
-                            task.isPinned
-                                ? Icons.star_rounded
-                                : Icons.star_border_rounded,
-                            size: 16,
-                          ),
-                          label: Text(task.isPinned ? 'Pinned' : 'Pin'),
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 0,
-                            ),
-                            minimumSize: const Size(0, 32),
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            visualDensity: VisualDensity.compact,
-                          ),
-                        ),
-                      ),
                     Row(
                       children: [
                         if (showGroup && group != null) ...[
@@ -145,13 +137,21 @@ class TaskCardWidget extends StatelessWidget {
                           const SizedBox(width: 8),
                         ],
                         Icon(
-                          Icons.access_time_rounded,
+                          task.isCompleted
+                              ? Icons.check_circle_outline_rounded
+                              : Icons.access_time_rounded,
                           size: 14,
                           color: isOverdue ? scheme.error : scheme.onSurfaceVariant,
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          DateFormat('MMM d, hh:mm a').format(task.dueDate),
+                          task.isCompleted
+                              ? (completedAt == null
+                                    ? 'Completed'
+                                    : 'Completed ${DateFormat('MMM d, hh:mm a').format(completedAt)}')
+                              : (dueDate == null
+                                    ? 'No due date'
+                                    : DateFormat('MMM d, hh:mm a').format(dueDate)),
                           style: TextStyle(
                             fontSize: 12,
                             color: isOverdue ? scheme.error : scheme.onSurfaceVariant,
@@ -189,25 +189,54 @@ class TaskCardWidget extends StatelessWidget {
                         ],
                       ),
                     ],
-                    if (!task.isCompleted && onNotify != null) ...[
+                    if (!task.isCompleted &&
+                        (onNotify != null || onPinToggle != null)) ...[
                       const SizedBox(height: 6),
-                      TextButton.icon(
-                        onPressed: onNotify,
-                        iconAlignment: IconAlignment.start,
-                        icon: const Icon(
-                          Icons.notifications_active_outlined,
-                          size: 16,
-                        ),
-                        label: const Text('Notify'),
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 0,
-                          ),
-                          minimumSize: const Size(0, 32),
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          visualDensity: VisualDensity.compact,
-                        ),
+                      Row(
+                        children: [
+                          if (onPinToggle != null)
+                            TextButton.icon(
+                              onPressed: onPinToggle,
+                              iconAlignment: IconAlignment.start,
+                              icon: Icon(
+                                task.isPinned
+                                    ? Icons.star_rounded
+                                    : Icons.star_border_rounded,
+                                size: 16,
+                              ),
+                              label: Text(task.isPinned ? 'Pinned' : 'Pin'),
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 0,
+                                ),
+                                minimumSize: const Size(0, 32),
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                visualDensity: VisualDensity.compact,
+                              ),
+                            ),
+                          if (onNotify != null) ...[
+                            if (onPinToggle != null) const SizedBox(width: 4),
+                            TextButton.icon(
+                              onPressed: onNotify,
+                              iconAlignment: IconAlignment.start,
+                              icon: const Icon(
+                                Icons.notifications_active_outlined,
+                                size: 16,
+                              ),
+                              label: const Text('Notify'),
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 0,
+                                ),
+                                minimumSize: const Size(0, 32),
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                visualDensity: VisualDensity.compact,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ],
                   ],

@@ -49,13 +49,23 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   int _compareByDueDateAscending(Task a, Task b) {
-    final byDueDate = a.dueDate.compareTo(b.dueDate);
+    final aDue = a.dueDate;
+    final bDue = b.dueDate;
+    int byDueDate;
+    if (aDue == null && bDue == null) {
+      byDueDate = 0;
+    } else if (aDue == null) {
+      byDueDate = 1;
+    } else if (bDue == null) {
+      byDueDate = -1;
+    } else {
+      byDueDate = aDue.compareTo(bDue);
+    }
     if (byDueDate != 0) return byDueDate;
     return a.title.toLowerCase().compareTo(b.title.toLowerCase());
   }
 
   TaskGroup? _groupForTask(Task task) {
-    if (task.groupId == 'individual') return null;
     if (_groups.isEmpty) return null;
     return _groups.firstWhere(
       (g) => g.id == task.groupId,
@@ -73,7 +83,6 @@ class _SearchPageState extends State<SearchPage> {
               ? 'Scheduled $count reminder${count > 1 ? 's' : ''} for "${task.title}"'
               : 'No future reminder time left for "${task.title}"',
         ),
-        behavior: SnackBarBehavior.floating,
       ),
     );
   }
@@ -102,12 +111,14 @@ class _SearchPageState extends State<SearchPage> {
 
       if (start != null) {
         final startAt = DateTime(start.year, start.month, start.day);
-        if (task.dueDate.isBefore(startAt)) return false;
+        if (task.dueDate == null || task.dueDate!.isBefore(startAt)) {
+          return false;
+        }
       }
 
       if (end != null) {
         final endAt = DateTime(end.year, end.month, end.day, 23, 59, 59, 999);
-        if (task.dueDate.isAfter(endAt)) return false;
+        if (task.dueDate == null || task.dueDate!.isAfter(endAt)) return false;
       }
 
       if (_groupFilter != 'all' && task.groupId != _groupFilter) {
@@ -327,10 +338,6 @@ class _SearchPageState extends State<SearchPage> {
                         const DropdownMenuItem(
                           value: 'all',
                           child: Text('All'),
-                        ),
-                        const DropdownMenuItem(
-                          value: 'individual',
-                          child: Text('Individual'),
                         ),
                         ..._groups.map(
                           (group) => DropdownMenuItem(

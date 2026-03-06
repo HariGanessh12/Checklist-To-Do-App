@@ -16,6 +16,7 @@ class CompletedTasksPage extends StatefulWidget {
 }
 
 class _CompletedTasksPageState extends State<CompletedTasksPage> {
+  static const Duration _restoreWindow = Duration(hours: 6);
   List<Task> _completedTasks = [];
   List<TaskGroup> _groups = [];
 
@@ -62,12 +63,18 @@ class _CompletedTasksPageState extends State<CompletedTasksPage> {
   }
 
   TaskGroup? _groupForTask(Task task) {
-    if (task.groupId == 'individual') return null;
     if (_groups.isEmpty) return null;
     return _groups.firstWhere(
       (g) => g.id == task.groupId,
       orElse: () => _groups.first,
     );
+  }
+
+  bool _canRestore(Task task, {DateTime? now}) {
+    final completedAt = task.completedAt;
+    if (completedAt == null) return false;
+    final current = now ?? DateTime.now();
+    return current.difference(completedAt) <= _restoreWindow;
   }
 
   @override
@@ -100,12 +107,14 @@ class _CompletedTasksPageState extends State<CompletedTasksPage> {
                       itemCount: _completedTasks.length,
                       itemBuilder: (context, index) {
                         final task = _completedTasks[index];
+                        final canRestore = _canRestore(task);
                         return TaskCardWidget(
                           task: task,
                           group: _groupForTask(task),
                           showGroup: true,
                           onTap: () {},
-                          onToggle: () => _restoreTask(task),
+                          showToggle: canRestore,
+                          onToggle: canRestore ? () => _restoreTask(task) : () {},
                         );
                       },
                     ),
