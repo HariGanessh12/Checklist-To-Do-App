@@ -48,10 +48,16 @@ class NotificationService {
       '@mipmap/ic_launcher',
     );
     const iosSettings = DarwinInitializationSettings();
+    const windowsSettings = WindowsInitializationSettings(
+      appName: 'Checklist App',
+      appUserModelId: 'com.example.checklist_app',
+      guid: '2f4c4e1f-c45d-4f59-bf5a-9be6a7d8f2b1',
+    );
     const settings = InitializationSettings(
       android: androidSettings,
       iOS: iosSettings,
       macOS: iosSettings,
+      windows: windowsSettings,
     );
 
     await _notifications.initialize(

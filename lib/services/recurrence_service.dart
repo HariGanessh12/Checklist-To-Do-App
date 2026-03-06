@@ -1,4 +1,5 @@
 import 'package:uuid/uuid.dart';
+import 'dart:math';
 
 import '../models/task_model.dart';
 
@@ -7,11 +8,10 @@ class RecurrenceService {
     if (task.recurrence == TaskRecurrence.none) return null;
 
     final current = now ?? DateTime.now();
-    final intervalDays = _intervalDays(task);
-    var nextDue = task.dueDate.add(Duration(days: intervalDays));
+    var nextDue = _advance(task.dueDate, task);
 
     while (!nextDue.isAfter(current)) {
-      nextDue = nextDue.add(Duration(days: intervalDays));
+      nextDue = _advance(nextDue, task);
     }
 
     return Task(
@@ -23,6 +23,7 @@ class RecurrenceService {
       dueDate: nextDue,
       isCompleted: false,
       isPinned: task.isPinned,
+      streakEnabled: task.streakEnabled,
       notificationEnabled: task.notificationEnabled,
       recurrence: task.recurrence,
       recurrenceIntervalDays: task.recurrenceIntervalDays,
@@ -33,16 +34,37 @@ class RecurrenceService {
     );
   }
 
-  static int _intervalDays(Task task) {
+  static DateTime _advance(DateTime from, Task task) {
     switch (task.recurrence) {
       case TaskRecurrence.none:
-        return 0;
+        return from;
       case TaskRecurrence.daily:
-        return 1;
+        return from.add(const Duration(days: 1));
       case TaskRecurrence.weekly:
-        return 7;
+        return from.add(const Duration(days: 7));
       case TaskRecurrence.custom:
-        return (task.recurrenceIntervalDays ?? 1).clamp(1, 3650);
+        final days = (task.recurrenceIntervalDays ?? 1).clamp(1, 3650);
+        return from.add(Duration(days: days));
+      case TaskRecurrence.monthly:
+        return _addMonths(from, 1);
     }
+  }
+
+  static DateTime _addMonths(DateTime date, int monthsToAdd) {
+    final zeroBasedMonth = date.month - 1 + monthsToAdd;
+    final year = date.year + (zeroBasedMonth ~/ 12);
+    final month = (zeroBasedMonth % 12) + 1;
+    final maxDay = DateTime(year, month + 1, 0).day;
+    final day = min(date.day, maxDay);
+    return DateTime(
+      year,
+      month,
+      day,
+      date.hour,
+      date.minute,
+      date.second,
+      date.millisecond,
+      date.microsecond,
+    );
   }
 }

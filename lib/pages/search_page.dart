@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../models/task_group_model.dart';
 import '../models/task_model.dart';
 import '../services/storage_service.dart';
@@ -18,13 +19,21 @@ class _SearchPageState extends State<SearchPage> {
   List<Task> _allTasks = [];
   List<TaskGroup> _groups = [];
   List<Task> _results = [];
+  DateTime? _startDate;
+  DateTime? _endDate;
+  String _groupFilter = 'all';
+  bool? _streakFilter;
+  bool? _completionFilter;
+  Set<TaskPriority> _priorityFilters = <TaskPriority>{};
+  Set<TaskRecurrence> _recurrenceFilters = <TaskRecurrence>{};
 
   @override
   void initState() {
     super.initState();
     _allTasks = StorageService.getTasks();
     _groups = StorageService.getGroups();
-    _allTasks.sort(_comparePinnedThenDueDate);
+    _allTasks.sort(_compareByDueDateAscending);
+    _applySearchAndFilters();
   }
 
   @override
@@ -34,25 +43,13 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   void _onSearch(String query) {
-    final q = query.trim().toLowerCase();
-    if (q.isEmpty) {
-      setState(() => _results = []);
-      return;
-    }
-
-    setState(() {
-      _results = _allTasks.where((t) {
-        return t.title.toLowerCase().contains(q) ||
-            t.description.toLowerCase().contains(q);
-      }).toList()..sort(_comparePinnedThenDueDate);
-    });
+    _applySearchAndFilters();
   }
 
-  int _comparePinnedThenDueDate(Task a, Task b) {
-    if (a.isPinned != b.isPinned) {
-      return a.isPinned ? -1 : 1;
-    }
-    return a.dueDate.compareTo(b.dueDate);
+  int _compareByDueDateAscending(Task a, Task b) {
+    final byDueDate = a.dueDate.compareTo(b.dueDate);
+    if (byDueDate != 0) return byDueDate;
+    return a.title.toLowerCase().compareTo(b.title.toLowerCase());
   }
 
   TaskGroup? _groupForTask(Task task) {
@@ -85,11 +82,412 @@ class _SearchPageState extends State<SearchPage> {
     if (idx == -1) return;
     allTasks[idx] = task.copyWith(isPinned: !task.isPinned);
     StorageService.saveTasks(allTasks);
-    _allTasks = allTasks..sort(_comparePinnedThenDueDate);
-    if (_searchController.text.trim().isNotEmpty) {
-      _onSearch(_searchController.text);
-    } else {
-      setState(() {});
+    _allTasks = allTasks..sort(_compareByDueDateAscending);
+    _applySearchAndFilters();
+  }
+
+  void _applySearchAndFilters() {
+    final q = _searchController.text.trim().toLowerCase();
+    final start = _startDate;
+    final end = _endDate;
+
+    final filtered = _allTasks.where((task) {
+      if (q.isNotEmpty &&
+          !task.title.toLowerCase().contains(q) &&
+          !task.description.toLowerCase().contains(q)) {
+        return false;
+      }
+
+      if (start != null) {
+        final startAt = DateTime(start.year, start.month, start.day);
+        if (task.dueDate.isBefore(startAt)) return false;
+      }
+
+      if (end != null) {
+        final endAt = DateTime(end.year, end.month, end.day, 23, 59, 59, 999);
+        if (task.dueDate.isAfter(endAt)) return false;
+      }
+
+      if (_groupFilter != 'all' && task.groupId != _groupFilter) {
+        return false;
+      }
+
+      if (_streakFilter != null && task.streakEnabled != _streakFilter) {
+        return false;
+      }
+
+      if (_completionFilter != null && task.isCompleted != _completionFilter) {
+        return false;
+      }
+
+      if (_priorityFilters.isNotEmpty &&
+          !_priorityFilters.contains(task.priority)) {
+        return false;
+      }
+
+      if (_recurrenceFilters.isNotEmpty &&
+          !_recurrenceFilters.contains(task.recurrence)) {
+        return false;
+      }
+
+      return true;
+    }).toList()..sort(_compareByDueDateAscending);
+
+    setState(() => _results = filtered);
+  }
+
+  bool get _hasActiveFilters {
+    return _startDate != null ||
+        _endDate != null ||
+        _groupFilter != 'all' ||
+        _streakFilter != null ||
+        _completionFilter != null ||
+        _priorityFilters.isNotEmpty ||
+        _recurrenceFilters.isNotEmpty;
+  }
+
+  Future<void> _openFilterSheet() async {
+    DateTime? draftStart = _startDate;
+    DateTime? draftEnd = _endDate;
+    String draftGroup = _groupFilter;
+    bool? draftStreak = _streakFilter;
+    bool? draftCompletion = _completionFilter;
+    final draftPriorities = Set<TaskPriority>.from(_priorityFilters);
+    final draftRecurrences = Set<TaskRecurrence>.from(_recurrenceFilters);
+
+    Future<DateTime?> pickDate(DateTime? initial) async {
+      return showDatePicker(
+        context: context,
+        initialDate: initial ?? DateTime.now(),
+        firstDate: DateTime(2000),
+        lastDate: DateTime(2100),
+      );
+    }
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        final scheme = Theme.of(context).colorScheme;
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            String dateLabel(DateTime? date) {
+              if (date == null) return 'Not set';
+              return DateFormat('MMM d, yyyy').format(date);
+            }
+
+            Widget boolFilter({
+              required String title,
+              required bool? value,
+              required ValueChanged<bool?> onChanged,
+              String trueLabel = 'Yes',
+              String falseLabel = 'No',
+            }) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      ChoiceChip(
+                        label: const Text('Any'),
+                        selected: value == null,
+                        onSelected: (_) => onChanged(null),
+                      ),
+                      ChoiceChip(
+                        label: Text(trueLabel),
+                        selected: value == true,
+                        onSelected: (_) => onChanged(true),
+                      ),
+                      ChoiceChip(
+                        label: Text(falseLabel),
+                        selected: value == false,
+                        onSelected: (_) => onChanged(false),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            }
+
+            return Container(
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 12,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+              ),
+              decoration: BoxDecoration(
+                color: scheme.surface,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 34,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: scheme.outlineVariant,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    const Text(
+                      'Search Filters',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    const Text(
+                      'Date Range',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: () async {
+                                    final picked = await pickDate(draftStart);
+                                    if (picked == null) return;
+                                    setSheetState(() => draftStart = picked);
+                                  },
+                                  child: Text(
+                                    'Start: ${dateLabel(draftStart)}',
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                tooltip: 'Clear start date',
+                                onPressed: draftStart == null
+                                    ? null
+                                    : () => setSheetState(
+                                        () => draftStart = null,
+                                      ),
+                                icon: const Icon(Icons.close_rounded, size: 18),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: () async {
+                                    final picked = await pickDate(draftEnd);
+                                    if (picked == null) return;
+                                    setSheetState(() => draftEnd = picked);
+                                  },
+                                  child: Text('End: ${dateLabel(draftEnd)}'),
+                                ),
+                              ),
+                              IconButton(
+                                tooltip: 'Clear end date',
+                                onPressed: draftEnd == null
+                                    ? null
+                                    : () =>
+                                          setSheetState(() => draftEnd = null),
+                                icon: const Icon(Icons.close_rounded, size: 18),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue: draftGroup,
+                      decoration: const InputDecoration(
+                        labelText: 'Task Group',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: [
+                        const DropdownMenuItem(
+                          value: 'all',
+                          child: Text('All'),
+                        ),
+                        const DropdownMenuItem(
+                          value: 'individual',
+                          child: Text('Individual'),
+                        ),
+                        ..._groups.map(
+                          (group) => DropdownMenuItem(
+                            value: group.id,
+                            child: Text('${group.icon} ${group.name}'),
+                          ),
+                        ),
+                      ],
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setSheetState(() => draftGroup = value);
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    boolFilter(
+                      title: 'Streak',
+                      value: draftStreak,
+                      onChanged: (value) =>
+                          setSheetState(() => draftStreak = value),
+                      trueLabel: 'Streak On',
+                      falseLabel: 'Streak Off',
+                    ),
+                    const SizedBox(height: 12),
+                    boolFilter(
+                      title: 'Status',
+                      value: draftCompletion,
+                      onChanged: (value) =>
+                          setSheetState(() => draftCompletion = value),
+                      trueLabel: 'Completed',
+                      falseLabel: 'Active',
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Priority',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      children: TaskPriority.values.map((priority) {
+                        final selected = draftPriorities.contains(priority);
+                        return FilterChip(
+                          label: Text(
+                            priority.name[0].toUpperCase() +
+                                priority.name.substring(1),
+                          ),
+                          selected: selected,
+                          onSelected: (value) {
+                            setSheetState(() {
+                              if (value) {
+                                draftPriorities.add(priority);
+                              } else {
+                                draftPriorities.remove(priority);
+                              }
+                            });
+                          },
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Recurrence',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      children: TaskRecurrence.values.map((recurrence) {
+                        final selected = draftRecurrences.contains(recurrence);
+                        return FilterChip(
+                          label: Text(_recurrenceLabel(recurrence)),
+                          selected: selected,
+                          onSelected: (value) {
+                            setSheetState(() {
+                              if (value) {
+                                draftRecurrences.add(recurrence);
+                              } else {
+                                draftRecurrences.remove(recurrence);
+                              }
+                            });
+                          },
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () {
+                              setSheetState(() {
+                                draftStart = null;
+                                draftEnd = null;
+                                draftGroup = 'all';
+                                draftStreak = null;
+                                draftCompletion = null;
+                                draftPriorities.clear();
+                                draftRecurrences.clear();
+                              });
+                            },
+                            child: const Text('Reset'),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: FilledButton(
+                            onPressed: () {
+                              setState(() {
+                                _startDate = draftStart;
+                                _endDate = draftEnd;
+                                _groupFilter = draftGroup;
+                                _streakFilter = draftStreak;
+                                _completionFilter = draftCompletion;
+                                _priorityFilters = draftPriorities;
+                                _recurrenceFilters = draftRecurrences;
+                              });
+                              Navigator.pop(context);
+                              _applySearchAndFilters();
+                            },
+                            child: const Text('Apply'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _clearAllFilters() {
+    setState(() {
+      _startDate = null;
+      _endDate = null;
+      _groupFilter = 'all';
+      _streakFilter = null;
+      _completionFilter = null;
+      _priorityFilters.clear();
+      _recurrenceFilters.clear();
+    });
+    _applySearchAndFilters();
+  }
+
+  String _recurrenceLabel(TaskRecurrence recurrence) {
+    switch (recurrence) {
+      case TaskRecurrence.none:
+        return 'No repeat';
+      case TaskRecurrence.daily:
+        return 'Daily';
+      case TaskRecurrence.weekly:
+        return 'Weekly';
+      case TaskRecurrence.custom:
+        return 'Custom';
+      case TaskRecurrence.monthly:
+        return 'Monthly';
     }
   }
 
@@ -98,7 +496,7 @@ class _SearchPageState extends State<SearchPage> {
     final hasQuery = _searchController.text.trim().isNotEmpty;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F1F7),
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -119,25 +517,108 @@ class _SearchPageState extends State<SearchPage> {
                   hintText: 'What are you looking for?',
                   hintStyle: const TextStyle(fontWeight: FontWeight.w600),
                   prefixIcon: const Icon(Icons.search_rounded, size: 28),
+                  suffixIcon: IconButton(
+                    tooltip: 'Filters',
+                    onPressed: _openFilterSheet,
+                    icon: Icon(
+                      Icons.tune_rounded,
+                      color: _hasActiveFilters
+                          ? Theme.of(context).colorScheme.primary
+                          : null,
+                    ),
+                  ),
                   filled: true,
                   fillColor: Colors.grey.shade100,
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
-                    borderSide: const BorderSide(
-                      color: Color(0xFF6D54A5),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.primary,
                       width: 2,
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
-                    borderSide: const BorderSide(
-                      color: Color(0xFF6D54A5),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.primary,
                       width: 2,
                     ),
                   ),
                 ),
               ),
             ),
+            if (_hasActiveFilters)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            if (_startDate != null || _endDate != null)
+                              Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: Chip(
+                                  label: Text(
+                                    'Date: ${_startDate == null ? '-' : DateFormat('MMM d').format(_startDate!)} to ${_endDate == null ? '-' : DateFormat('MMM d').format(_endDate!)}',
+                                  ),
+                                ),
+                              ),
+                            if (_groupFilter != 'all')
+                              Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: Chip(
+                                  label: Text('Group: $_groupFilter'),
+                                ),
+                              ),
+                            if (_streakFilter != null)
+                              Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: Chip(
+                                  label: Text(
+                                    _streakFilter! ? 'Streak On' : 'Streak Off',
+                                  ),
+                                ),
+                              ),
+                            if (_completionFilter != null)
+                              Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: Chip(
+                                  label: Text(
+                                    _completionFilter! ? 'Completed' : 'Active',
+                                  ),
+                                ),
+                              ),
+                            if (_priorityFilters.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: Chip(
+                                  label: Text(
+                                    'Priority: ${_priorityFilters.map((e) => e.name).join(', ')}',
+                                  ),
+                                ),
+                              ),
+                            if (_recurrenceFilters.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: Chip(
+                                  label: Text(
+                                    'Repeat: ${_recurrenceFilters.map(_recurrenceLabel).join(', ')}',
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: _clearAllFilters,
+                      child: const Text('Clear'),
+                    ),
+                  ],
+                ),
+              ),
             Expanded(
               child: _results.isEmpty
                   ? _buildEmptyState(hasQuery)
@@ -170,6 +651,7 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Widget _buildEmptyState(bool hasQuery) {
+    final scheme = Theme.of(context).colorScheme;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -186,23 +668,23 @@ class _SearchPageState extends State<SearchPage> {
               hasQuery ? Icons.search_rounded : Icons.auto_awesome_rounded,
               size: 66,
               color: hasQuery
-                  ? const Color(0xFF6D54A5)
+                  ? Theme.of(context).colorScheme.primary
                   : const Color(0xFFFFB84D),
             ),
           ),
           const SizedBox(height: 32),
-          const Text(
+          Text(
             'Looking clear!',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF4B4754),
+              color: scheme.onSurface,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             hasQuery ? 'No tasks match your search.' : 'No tasks found here.',
-            style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+            style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant),
           ),
         ],
       ),

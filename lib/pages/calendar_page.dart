@@ -74,7 +74,7 @@ class _CalendarPageState extends State<CalendarPage> {
     final selectedTasks = _tasksForSelectedDate();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F1F7),
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(title: const Text('Calendar')),
       body: Column(
         children: [
@@ -118,7 +118,7 @@ class _CalendarPageState extends State<CalendarPage> {
                 Text(
                   '${selectedTasks.length} task${selectedTasks.length == 1 ? '' : 's'}',
                   style: TextStyle(
-                    color: Colors.grey.shade700,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -130,7 +130,9 @@ class _CalendarPageState extends State<CalendarPage> {
                 ? Center(
                     child: Text(
                       'No tasks due on this day.',
-                      style: TextStyle(color: Colors.grey.shade600),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   )
                 : ListView.separated(
@@ -150,6 +152,7 @@ class _CalendarPageState extends State<CalendarPage> {
   }
 
   Widget _buildMonthView() {
+    final scheme = Theme.of(context).colorScheme;
     final monthStart = DateTime(_focusedMonth.year, _focusedMonth.month, 1);
     final daysInMonth = DateTime(
       _focusedMonth.year,
@@ -165,9 +168,9 @@ class _CalendarPageState extends State<CalendarPage> {
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: scheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: scheme.outlineVariant),
       ),
       child: Column(
         children: [
@@ -248,6 +251,7 @@ class _CalendarPageState extends State<CalendarPage> {
   }
 
   Widget _buildWeekView() {
+    final scheme = Theme.of(context).colorScheme;
     final start = _startOfWeek(_selectedDate);
     final weekDays = List.generate(
       7,
@@ -258,9 +262,9 @@ class _CalendarPageState extends State<CalendarPage> {
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: scheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: scheme.outlineVariant),
       ),
       child: Column(
         children: [
@@ -316,6 +320,7 @@ class _CalendarPageState extends State<CalendarPage> {
   }
 
   Widget _buildDayCell(DateTime day, {bool compact = false}) {
+    final scheme = Theme.of(context).colorScheme;
     final selected = _isSameDay(day, _selectedDate);
     final isToday = _isSameDay(day, DateTime.now());
     final taskCount = _taskCountForDate(day);
@@ -333,11 +338,11 @@ class _CalendarPageState extends State<CalendarPage> {
         margin: const EdgeInsets.all(2),
         decoration: BoxDecoration(
           color: selected
-              ? const Color(0xFF6D54A5).withValues(alpha: 0.16)
+              ? scheme.primary.withValues(alpha: 0.16)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isToday ? const Color(0xFF6D54A5) : Colors.transparent,
+            color: isToday ? scheme.primary : Colors.transparent,
           ),
         ),
         child: Column(
@@ -346,13 +351,13 @@ class _CalendarPageState extends State<CalendarPage> {
             if (compact)
               Text(
                 label,
-                style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+                style: TextStyle(fontSize: 10, color: scheme.onSurfaceVariant),
               ),
             Text(
               '${day.day}',
               style: TextStyle(
                 fontWeight: FontWeight.w700,
-                color: selected ? const Color(0xFF4A3A75) : Colors.black87,
+                color: selected ? scheme.primary : scheme.onSurface,
               ),
             ),
             const SizedBox(height: 2),
@@ -383,6 +388,7 @@ class _CalendarPageState extends State<CalendarPage> {
   }
 
   Widget _buildTaskTile(Task task, TaskGroup? group) {
+    final scheme = Theme.of(context).colorScheme;
     Color priorityColor;
     switch (task.priority) {
       case TaskPriority.high:
@@ -399,9 +405,9 @@ class _CalendarPageState extends State<CalendarPage> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: scheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: scheme.outlineVariant),
       ),
       child: Row(
         children: [
@@ -420,9 +426,10 @@ class _CalendarPageState extends State<CalendarPage> {
               children: [
                 Text(
                   task.title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 15,
+                    color: scheme.onSurface,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -430,7 +437,10 @@ class _CalendarPageState extends State<CalendarPage> {
                 const SizedBox(height: 3),
                 Text(
                   '${DateFormat('hh:mm a').format(task.dueDate)}  •  ${group == null ? 'Individual' : '${group.icon} ${group.name}'}',
-                  style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
+                  style: TextStyle(
+                    color: scheme.onSurfaceVariant,
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),
@@ -456,12 +466,13 @@ class _WeekdayLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Expanded(
       child: Center(
         child: Text(
           text,
           style: TextStyle(
-            color: Colors.grey.shade700,
+            color: scheme.onSurfaceVariant,
             fontWeight: FontWeight.w600,
             fontSize: 12,
           ),

@@ -65,7 +65,7 @@ class _RemindersPageState extends State<RemindersPage> {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF4F1F7),
+        backgroundColor: Theme.of(context).colorScheme.surface,
         appBar: AppBar(
           title: const Text('Reminders'),
           actions: [
@@ -100,13 +100,14 @@ class _RemindersPageState extends State<RemindersPage> {
   }
 
   Widget _buildList(List<Task> tasks, {required bool enabledTab}) {
+    final scheme = Theme.of(context).colorScheme;
     if (tasks.isEmpty) {
       return Center(
         child: Text(
           enabledTab
               ? 'No tasks with reminders enabled.'
               : 'No tasks without reminders.',
-          style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+          style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 14),
         ),
       );
     }
@@ -156,24 +157,24 @@ class _RemindersPageState extends State<RemindersPage> {
                 const SizedBox(height: 4),
                 Text(
                   'Due: ${DateFormat('EEE, MMM d - hh:mm a').format(task.dueDate)}',
-                  style: TextStyle(color: Colors.grey.shade700),
+                  style: TextStyle(color: scheme.onSurfaceVariant),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   group == null
                       ? 'Group: Individual'
                       : 'Group: ${group.icon} ${group.name}',
-                  style: TextStyle(color: Colors.grey.shade700),
+                  style: TextStyle(color: scheme.onSurfaceVariant),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   'Priority: ${task.priority.name.toUpperCase()}',
-                  style: TextStyle(color: Colors.grey.shade700),
+                  style: TextStyle(color: scheme.onSurfaceVariant),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   _recurrenceLabel(task),
-                  style: TextStyle(color: Colors.grey.shade700),
+                  style: TextStyle(color: scheme.onSurfaceVariant),
                 ),
                 const SizedBox(height: 6),
                 Text(
@@ -184,8 +185,8 @@ class _RemindersPageState extends State<RemindersPage> {
                       : 'Reminders are turned off',
                   style: TextStyle(
                     color: task.notificationEnabled
-                        ? const Color(0xFF6D54A5)
-                        : Colors.grey.shade600,
+                        ? scheme.primary
+                        : scheme.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -208,6 +209,8 @@ class _RemindersPageState extends State<RemindersPage> {
       case TaskRecurrence.custom:
         final days = task.recurrenceIntervalDays ?? 1;
         return 'Repeat: Every $days day${days == 1 ? '' : 's'}';
+      case TaskRecurrence.monthly:
+        return 'Repeat: Monthly';
     }
   }
 }

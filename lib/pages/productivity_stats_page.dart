@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../models/task_group_model.dart';
 import '../services/productivity_stats_service.dart';
 import '../services/storage_service.dart';
 
@@ -12,6 +13,7 @@ class ProductivityStatsPage extends StatefulWidget {
 
 class _ProductivityStatsPageState extends State<ProductivityStatsPage> {
   late ProductivityStats _stats;
+  List<TaskGroup> _groups = [];
 
   @override
   void initState() {
@@ -23,13 +25,15 @@ class _ProductivityStatsPageState extends State<ProductivityStatsPage> {
     final tasks = StorageService.getTasks();
     setState(() {
       _stats = ProductivityStatsService.compute(tasks);
+      _groups = StorageService.getGroups();
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F1F7),
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(title: const Text('Productivity Stats')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
@@ -43,27 +47,117 @@ class _ProductivityStatsPageState extends State<ProductivityStatsPage> {
           ),
           const SizedBox(height: 10),
           _buildStatCard(
-            title: 'Current Streak',
-            value:
-                '${_stats.currentStreakDays} day${_stats.currentStreakDays == 1 ? '' : 's'}',
-            icon: Icons.local_fire_department_rounded,
-            color: const Color(0xFFE67E22),
-          ),
-          const SizedBox(height: 10),
-          _buildStatCard(
             title: 'Average Delay',
             value: _formatDelay(_stats.averageDelayHours),
             icon: Icons.schedule_rounded,
             color: const Color(0xFF3A7CA5),
           ),
+          const SizedBox(height: 12),
+          Text(
+            'Task Streaks',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: scheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 8),
+          if (_stats.taskStreaks.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: scheme.outlineVariant),
+              ),
+              child: Text(
+                'No task-specific streaks yet. Enable "Track Streak For This Task" while creating or editing a task.',
+                style: TextStyle(color: scheme.onSurfaceVariant),
+              ),
+            ),
+          if (_stats.taskStreaks.isNotEmpty)
+            ..._stats.taskStreaks.map(_buildTaskStreakTile),
           const SizedBox(height: 16),
           Text(
-            'Average delay is based on completed tasks: completion time minus due time.',
-            style: TextStyle(color: Colors.grey.shade700),
+            'Average delay is based on completed tasks: completion time minus due time. Task streaks are shown only for tasks with streak tracking enabled.',
+            style: TextStyle(color: scheme.onSurfaceVariant),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildTaskStreakTile(TaskStreakStat stat) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: scheme.outlineVariant),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 16,
+            backgroundColor: const Color(0xFFE67E22).withValues(alpha: 0.15),
+            child: const Icon(
+              Icons.local_fire_department_rounded,
+              color: Color(0xFFE67E22),
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  stat.title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: scheme.onSurface,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  _groupLabel(stat.groupId),
+                  style: TextStyle(
+                    color: scheme.onSurfaceVariant,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            '${stat.streakDays}',
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(width: 4),
+          const Icon(
+            Icons.local_fire_department_outlined,
+            size: 18,
+            color: Color(0xFFE67E22),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _groupLabel(String groupId) {
+    if (groupId == 'individual') return 'Individual';
+    TaskGroup? group;
+    for (final entry in _groups) {
+      if (entry.id == groupId) {
+        group = entry;
+        break;
+      }
+    }
+    if (group == null) return 'Group';
+    return '${group.icon} ${group.name}';
   }
 
   Widget _buildStatCard({
@@ -72,12 +166,13 @@ class _ProductivityStatsPageState extends State<ProductivityStatsPage> {
     required IconData icon,
     required Color color,
   }) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: scheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: scheme.outlineVariant),
       ),
       child: Row(
         children: [
@@ -95,16 +190,17 @@ class _ProductivityStatsPageState extends State<ProductivityStatsPage> {
                   title,
                   style: TextStyle(
                     fontSize: 13,
-                    color: Colors.grey.shade700,
+                    color: scheme.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
+                    color: scheme.onSurface,
                   ),
                 ),
               ],

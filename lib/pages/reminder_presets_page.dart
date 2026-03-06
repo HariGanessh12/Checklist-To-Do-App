@@ -23,8 +23,9 @@ class _ReminderPresetsPageState extends State<ReminderPresetsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F1F7),
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(title: const Text('Reminder Presets')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
@@ -37,7 +38,7 @@ class _ReminderPresetsPageState extends State<ReminderPresetsPage> {
           const SizedBox(height: 16),
           Text(
             'Tip: negative = before due time, 0 = at due time, positive = after due time.',
-            style: TextStyle(color: Colors.grey.shade700),
+            style: TextStyle(color: scheme.onSurfaceVariant),
           ),
         ],
       ),
@@ -45,15 +46,16 @@ class _ReminderPresetsPageState extends State<ReminderPresetsPage> {
   }
 
   Widget _buildSection(TaskPriority priority) {
+    final scheme = Theme.of(context).colorScheme;
     final list = _presets[priority] ?? <int>[];
     final title =
         '${priority.name[0].toUpperCase()}${priority.name.substring(1)} Priority';
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: scheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: scheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -80,7 +82,7 @@ class _ReminderPresetsPageState extends State<ReminderPresetsPage> {
           if (list.isEmpty)
             Text(
               'No reminders configured.',
-              style: TextStyle(color: Colors.grey.shade600),
+              style: TextStyle(color: scheme.onSurfaceVariant),
             ),
           if (list.isNotEmpty)
             Wrap(

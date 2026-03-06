@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../models/task_group_model.dart';
@@ -18,13 +17,37 @@ class _AddEditGroupSheetState extends State<AddEditGroupSheet> {
   late String _selectedIcon;
   late int _selectedColor;
 
-  final List<String> _icons = ['📁', '💼', '📚', '🛒', '🏠', '🎯', '🎨', '🚀', '💊', '🍽️', '🎮', '💡'];
-  final List<int> _colors = [0xFF6750A4, 0xFF0061A4, 0xFF006A60, 0xFF984061, 0xFF7D5260, 0xFFB3261E, 0xFF605D62, 0xFF2E7D32];
+  final List<String> _icons = [
+    '📁',
+    '💼',
+    '📚',
+    '🛒',
+    '🏠',
+    '🎯',
+    '🎨',
+    '🚀',
+    '💊',
+    '🍽️',
+    '🎮',
+    '💡',
+  ];
+  final List<int> _colors = [
+    0xFF006D77,
+    0xFF0061A4,
+    0xFF006A60,
+    0xFF984061,
+    0xFF7D5260,
+    0xFFB3261E,
+    0xFF605D62,
+    0xFF2E7D32,
+  ];
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.groupToEdit?.name ?? '');
+    _nameController = TextEditingController(
+      text: widget.groupToEdit?.name ?? '',
+    );
     _selectedIcon = widget.groupToEdit?.icon ?? _icons.first;
     _selectedColor = widget.groupToEdit?.colorValue ?? _colors.first;
   }
@@ -37,13 +60,16 @@ class _AddEditGroupSheetState extends State<AddEditGroupSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
-        left: 24, right: 24, top: 12,
+        left: 24,
+        right: 24,
+        top: 12,
       ),
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: scheme.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
       child: SingleChildScrollView(
@@ -51,19 +77,37 @@ class _AddEditGroupSheetState extends State<AddEditGroupSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(child: Container(width: 32, height: 4, margin: const EdgeInsets.only(bottom: 24), decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)))),
-            Text(widget.groupToEdit == null ? "New Group" : "Edit Group", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            Center(
+              child: Container(
+                width: 32,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 24),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            Text(
+              widget.groupToEdit == null ? "New Group" : "Edit Group",
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 24),
             TextField(
               controller: _nameController,
               decoration: InputDecoration(
                 labelText: "Group Name",
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
               autofocus: true,
             ),
             const SizedBox(height: 24),
-            const Text("Choose Icon", style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              "Choose Icon",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 12),
             SizedBox(
               height: 50,
@@ -76,17 +120,25 @@ class _AddEditGroupSheetState extends State<AddEditGroupSheet> {
                     width: 50,
                     margin: const EdgeInsets.only(right: 8),
                     decoration: BoxDecoration(
-                      color: _selectedIcon == _icons[i] ? Theme.of(context).colorScheme.primaryContainer : Colors.grey.shade100,
+                      color: _selectedIcon == _icons[i]
+                          ? Theme.of(context).colorScheme.primaryContainer
+                          : scheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     alignment: Alignment.center,
-                    child: Text(_icons[i], style: const TextStyle(fontSize: 24)),
+                    child: Text(
+                      _icons[i],
+                      style: const TextStyle(fontSize: 24),
+                    ),
                   ),
                 ),
               ),
             ),
             const SizedBox(height: 24),
-            const Text("Choose Color", style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              "Choose Color",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 12),
             SizedBox(
               height: 50,
@@ -101,7 +153,9 @@ class _AddEditGroupSheetState extends State<AddEditGroupSheet> {
                     decoration: BoxDecoration(
                       color: Color(_colors[i]),
                       shape: BoxShape.circle,
-                      border: _selectedColor == _colors[i] ? Border.all(color: Colors.black, width: 3) : null,
+                      border: _selectedColor == _colors[i]
+                          ? Border.all(color: scheme.onSurface, width: 3)
+                          : null,
                     ),
                   ),
                 ),

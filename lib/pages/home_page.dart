@@ -5,6 +5,8 @@ import 'calendar_page.dart';
 import '../services/storage_service.dart';
 import '../services/notification_service.dart';
 import '../services/recurrence_service.dart';
+import '../services/task_completion_service.dart';
+import '../services/task_template_service.dart';
 import '../widgets/add_edit_task_sheet.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/task_card_widget.dart';
@@ -127,6 +129,12 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _toggleTaskCompletion(Task task) {
+    if (!TaskCompletionService.canCompleteNow(task)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(TaskCompletionService.blockedMessage(task))),
+      );
+      return;
+    }
     final allTasks = StorageService.getTasks();
     final idx = allTasks.indexWhere((t) => t.id == task.id);
     if (idx == -1) return;
@@ -170,6 +178,14 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Future<void> _saveTaskAsTemplate(Task task, String templateName) async {
+    await TaskTemplateService.createFromTask(task, name: templateName);
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Template "$templateName" created')));
+  }
+
   void _showTaskDetail(Task task) {
     showModalBottomSheet(
       context: context,
@@ -184,6 +200,10 @@ class _HomePageState extends State<HomePage> {
         onDelete: () {
           Navigator.pop(context);
           _deleteTask(task);
+        },
+        onSaveAsTemplate: (templateName) async {
+          Navigator.pop(context);
+          await _saveTaskAsTemplate(task, templateName);
         },
       ),
     );
@@ -207,7 +227,7 @@ class _HomePageState extends State<HomePage> {
     final visibleTasks = _visibleTasks;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F1F7),
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -292,6 +312,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildChip(String label, String id, {Widget? icon}) {
+    final scheme = Theme.of(context).colorScheme;
     final selected = _selectedGroupId == id;
     return Padding(
       padding: const EdgeInsets.only(right: 8),
@@ -303,13 +324,13 @@ class _HomePageState extends State<HomePage> {
           label,
           style: TextStyle(
             fontWeight: FontWeight.w600,
-            color: selected ? Colors.white : const Color(0xFF373340),
+            color: selected ? scheme.onPrimary : scheme.onSurface,
           ),
         ),
-        selectedColor: const Color(0xFF6D54A5),
-        backgroundColor: const Color(0xFFF6F4FA),
+        selectedColor: scheme.primary,
+        backgroundColor: scheme.surfaceContainerHigh,
         side: BorderSide(
-          color: selected ? Colors.transparent : const Color(0xFFD2C9DE),
+          color: selected ? Colors.transparent : scheme.outlineVariant,
         ),
         onSelected: (_) => setState(() => _selectedGroupId = id),
       ),
@@ -348,6 +369,7 @@ class _HomePageState extends State<HomePage> {
     required int count,
     required TaskTimeFilter filter,
   }) {
+    final scheme = Theme.of(context).colorScheme;
     final selected = _selectedTimeFilter == filter;
     return Padding(
       padding: const EdgeInsets.only(right: 8),
@@ -358,13 +380,13 @@ class _HomePageState extends State<HomePage> {
           '$label ($count)',
           style: TextStyle(
             fontWeight: FontWeight.w600,
-            color: selected ? Colors.white : const Color(0xFF373340),
+            color: selected ? scheme.onPrimary : scheme.onSurface,
           ),
         ),
-        selectedColor: const Color(0xFF3A7CA5),
-        backgroundColor: const Color(0xFFF6F4FA),
+        selectedColor: scheme.tertiary,
+        backgroundColor: scheme.surfaceContainerHigh,
         side: BorderSide(
-          color: selected ? Colors.transparent : const Color(0xFFD2C9DE),
+          color: selected ? Colors.transparent : scheme.outlineVariant,
         ),
         onSelected: (_) => setState(() => _selectedTimeFilter = filter),
       ),
@@ -372,6 +394,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildEmptyState() {
+    final scheme = Theme.of(context).colorScheme;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -391,18 +414,18 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           const SizedBox(height: 32),
-          const Text(
+          Text(
             'Looking clear!',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF4B4754),
+              color: scheme.onSurface,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             'No tasks found here.',
-            style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+            style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant),
           ),
         ],
       ),

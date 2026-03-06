@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import '../models/task_model.dart';
 import '../models/task_group_model.dart';
+import '../pages/template_manager_page.dart';
 import '../services/task_template_service.dart';
 
 class AddEditTaskSheet extends StatefulWidget {
@@ -31,8 +32,10 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
   late List<TextEditingController> _subtaskControllers;
   late TaskPriority _priority;
   late TaskRecurrence _recurrence;
+  late bool _streakEnabled;
   late String _selectedGroupId;
   late DateTime _selectedDate;
+  List<TaskTemplate> _templates = const [];
 
   @override
   void initState() {
@@ -52,6 +55,7 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
         .toList();
     _priority = widget.taskToEdit?.priority ?? TaskPriority.medium;
     _recurrence = widget.taskToEdit?.recurrence ?? TaskRecurrence.none;
+    _streakEnabled = widget.taskToEdit?.streakEnabled ?? false;
     _selectedGroupId =
         widget.taskToEdit?.groupId ??
         widget.initialGroupId ??
@@ -59,6 +63,7 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
     _selectedDate =
         widget.taskToEdit?.dueDate ??
         DateTime.now().add(const Duration(hours: 1));
+    _templates = TaskTemplateService.templates;
   }
 
   @override
@@ -76,6 +81,12 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
     setState(() {
       _subtasks.add(const Subtask(title: ''));
       _subtaskControllers.add(TextEditingController());
+    });
+  }
+
+  void _refreshTemplates() {
+    setState(() {
+      _templates = TaskTemplateService.templates;
     });
   }
 
@@ -139,8 +150,23 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
     });
   }
 
+  String _dueDateContextLabel(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final target = DateTime(date.year, date.month, date.day);
+    final diff = target.difference(today).inDays;
+
+    if (diff == 0) return 'Today';
+    if (diff == 1) return 'Tomorrow';
+    if (diff == -1) return 'Yesterday';
+    if (date.isBefore(now)) return 'Overdue';
+    if (diff > 1) return 'In $diff days';
+    return '${diff.abs()} days ago';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -148,8 +174,8 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
         right: 24,
         top: 12,
       ),
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: scheme.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
       child: SingleChildScrollView(
@@ -177,15 +203,34 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
               ),
             ),
             const SizedBox(height: 12),
-            const Text(
-              "Templates",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    "Templates",
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const TemplateManagerPage(),
+                      ),
+                    );
+                    if (!mounted) return;
+                    _refreshTemplates();
+                  },
+                  icon: const Icon(Icons.tune_rounded, size: 18),
+                  label: const Text('Manage'),
+                ),
+              ],
             ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: TaskTemplateService.templates
+              children: _templates
                   .map(
                     (template) => ActionChip(
                       avatar: const Icon(Icons.auto_fix_high_rounded, size: 16),
@@ -281,26 +326,76 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
               }),
             ],
             const Divider(height: 32),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(
-                Icons.calendar_today_rounded,
-                color: Color(0xFF6750A4),
-              ),
-              title: const Text(
-                "Due Date & Time",
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-              subtitle: Text(
-                DateFormat('EEEE, MMM dd • hh:mm a').format(_selectedDate),
-                style: TextStyle(
-                  color: _selectedDate.isBefore(DateTime.now())
-                      ? Colors.red
-                      : Colors.grey.shade700,
+            InkWell(
+              onTap: _pickDateTime,
+              borderRadius: BorderRadius.circular(16),
+              child: Ink(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  color: scheme.surfaceContainerHigh,
+                  border: Border.all(color: scheme.outlineVariant),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.calendar_today_rounded,
+                      color: Color(0xFF006D77),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Due Date & Time",
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            DateFormat(
+                              'EEEE, MMM d • hh:mm a',
+                            ).format(_selectedDate),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: _selectedDate.isBefore(DateTime.now())
+                                  ? Colors.red
+                                  : scheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _selectedDate.isBefore(DateTime.now())
+                                  ? Colors.red.withValues(alpha: 0.12)
+                                  : scheme.primary.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              _dueDateContextLabel(_selectedDate),
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: _selectedDate.isBefore(DateTime.now())
+                                    ? Colors.red
+                                    : scheme.primary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ],
                 ),
               ),
-              onTap: _pickDateTime,
-              trailing: const Icon(Icons.chevron_right_rounded),
             ),
             const SizedBox(height: 16),
             const Text(
@@ -359,6 +454,10 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
                   value: TaskRecurrence.custom,
                   child: Text("Custom (every N days)"),
                 ),
+                DropdownMenuItem(
+                  value: TaskRecurrence.monthly,
+                  child: Text("Monthly"),
+                ),
               ],
               onChanged: (v) => setState(() => _recurrence = v!),
             ),
@@ -376,6 +475,19 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
                 ),
               ),
             ],
+            const SizedBox(height: 12),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text(
+                'Track Streak For This Task',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+              subtitle: const Text(
+                'Shows a dedicated streak in Productivity Stats.',
+              ),
+              value: _streakEnabled,
+              onChanged: (value) => setState(() => _streakEnabled = value),
+            ),
             const SizedBox(height: 24),
             DropdownButtonFormField<String>(
               initialValue: _selectedGroupId,
@@ -393,7 +505,7 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
               items: [
                 const DropdownMenuItem(
                   value: 'individual',
-                  child: Text("📥 Individual"),
+                  child: Text("ðŸ“¥ Individual"),
                 ),
                 ...widget.groups.map(
                   (g) => DropdownMenuItem(
@@ -451,6 +563,7 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
                     dueDate: _selectedDate,
                     isCompleted: widget.taskToEdit?.isCompleted ?? false,
                     isPinned: widget.taskToEdit?.isPinned ?? false,
+                    streakEnabled: _streakEnabled,
                     notificationEnabled:
                         widget.taskToEdit?.notificationEnabled ?? true,
                     recurrence: _recurrence,

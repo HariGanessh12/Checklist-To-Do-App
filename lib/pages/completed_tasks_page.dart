@@ -71,7 +71,7 @@ class _CompletedTasksPageState extends State<CompletedTasksPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F1F7),
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
         child: Column(
           children: [
@@ -124,6 +124,7 @@ class _CompletedTasksPageState extends State<CompletedTasksPage> {
   }
 
   Widget _buildEmptyState() {
+    final scheme = Theme.of(context).colorScheme;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -143,18 +144,18 @@ class _CompletedTasksPageState extends State<CompletedTasksPage> {
             ),
           ),
           const SizedBox(height: 32),
-          const Text(
+          Text(
             'Looking clear!',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF4B4754),
+              color: scheme.onSurface,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             'You haven\'t finished any tasks yet.',
-            style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+            style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant),
           ),
         ],
       ),

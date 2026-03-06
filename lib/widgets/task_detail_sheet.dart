@@ -8,6 +8,7 @@ class TaskDetailSheet extends StatelessWidget {
   final TaskGroup? group;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final Future<void> Function(String templateName)? onSaveAsTemplate;
 
   const TaskDetailSheet({
     super.key,
@@ -15,17 +16,19 @@ class TaskDetailSheet extends StatelessWidget {
     this.group,
     required this.onEdit,
     required this.onDelete,
+    this.onSaveAsTemplate,
   });
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final isOverdue =
         !task.isCompleted && task.dueDate.isBefore(DateTime.now());
 
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: scheme.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
       child: Column(
@@ -38,7 +41,7 @@ class TaskDetailSheet extends StatelessWidget {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: Color(
-                    group?.colorValue ?? 0xFF6750A4,
+                    group?.colorValue ?? 0xFF006D77,
                   ).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -61,7 +64,7 @@ class TaskDetailSheet extends StatelessWidget {
                     ),
                     Text(
                       group?.name ?? "Individual",
-                      style: TextStyle(color: Colors.grey.shade600),
+                      style: TextStyle(color: scheme.onSurfaceVariant),
                     ),
                   ],
                 ),
@@ -74,18 +77,24 @@ class TaskDetailSheet extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           if (task.description.isNotEmpty) ...[
-            const Text(
+            Text(
               "Notes",
-              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: scheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 8),
             Text(task.description, style: const TextStyle(fontSize: 16)),
             const SizedBox(height: 24),
           ],
           if (task.subtasks.isNotEmpty) ...[
-            const Text(
+            Text(
               "Subtasks",
-              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: scheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 8),
             ...task.subtasks.map(
@@ -111,8 +120,8 @@ class TaskDetailSheet extends StatelessWidget {
                               ? TextDecoration.lineThrough
                               : null,
                           color: subtask.isCompleted
-                              ? Colors.grey.shade600
-                              : Colors.black87,
+                              ? scheme.onSurfaceVariant
+                              : scheme.onSurface,
                         ),
                       ),
                     ),
@@ -122,9 +131,12 @@ class TaskDetailSheet extends StatelessWidget {
             ),
             const SizedBox(height: 20),
           ],
-          const Text(
+          Text(
             "Schedule",
-            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: scheme.onSurfaceVariant,
+            ),
           ),
           const SizedBox(height: 8),
           Row(
@@ -139,7 +151,7 @@ class TaskDetailSheet extends StatelessWidget {
                 DateFormat('EEEE, MMM dd • hh:mm a').format(task.dueDate),
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  color: isOverdue ? Colors.red : Colors.black,
+                  color: isOverdue ? Colors.red : scheme.onSurface,
                 ),
               ),
             ],
@@ -158,10 +170,21 @@ class TaskDetailSheet extends StatelessWidget {
                   _recurrenceLabel(task),
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
-                    color: Colors.grey.shade800,
+                    color: scheme.onSurfaceVariant,
                   ),
                 ),
               ],
+            ),
+          ],
+          if (onSaveAsTemplate != null) ...[
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => _promptSaveAsTemplate(context),
+                icon: const Icon(Icons.bookmark_add_rounded),
+                label: const Text('Create Template From Task'),
+              ),
             ),
           ],
           const SizedBox(height: 32),
@@ -207,6 +230,46 @@ class TaskDetailSheet extends StatelessWidget {
       case TaskRecurrence.custom:
         final days = task.recurrenceIntervalDays ?? 1;
         return 'Repeats every $days day${days == 1 ? '' : 's'}';
+      case TaskRecurrence.monthly:
+        return 'Repeats monthly';
     }
+  }
+
+  Future<void> _promptSaveAsTemplate(BuildContext context) async {
+    final controller = TextEditingController(text: task.title);
+    final templateName = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Save as template'),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            decoration: const InputDecoration(
+              labelText: 'Template name',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final value = controller.text.trim();
+                if (value.isEmpty) return;
+                Navigator.pop(dialogContext, value);
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+    controller.dispose();
+
+    if (templateName == null || templateName.isEmpty) return;
+    await onSaveAsTemplate!(templateName);
   }
 }

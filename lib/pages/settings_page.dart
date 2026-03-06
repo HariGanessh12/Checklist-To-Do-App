@@ -13,16 +13,23 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   bool _animationsEnabled = true;
+  ThemeMode _themeMode = ThemeMode.system;
 
   @override
   void initState() {
     super.initState();
     _animationsEnabled = StorageService.getAnimationsEnabled();
+    _themeMode = StorageService.getThemeMode();
   }
 
   Future<void> _toggleAnimations(bool value) async {
     setState(() => _animationsEnabled = value);
     await StorageService.saveAnimationsEnabled(value);
+  }
+
+  Future<void> _setThemeMode(ThemeMode mode) async {
+    setState(() => _themeMode = mode);
+    await StorageService.saveThemeMode(mode);
   }
 
   Future<void> _factoryReset() async {
@@ -56,13 +63,14 @@ class _SettingsPageState extends State<SettingsPage> {
     ).showSnackBar(const SnackBar(content: Text('All data has been cleared')));
     setState(() {
       _animationsEnabled = true;
+      _themeMode = ThemeMode.system;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F1F7),
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
@@ -74,19 +82,21 @@ class _SettingsPageState extends State<SettingsPage> {
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 16),
+              _buildThemeModeCard(),
+              const SizedBox(height: 14),
               _buildSwitchCard(),
               const SizedBox(height: 14),
               _buildStatsCard(context),
               const SizedBox(height: 14),
               _buildReminderCard(context),
               const SizedBox(height: 28),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Text(
                   'APP CONTROL',
                   style: TextStyle(
                     letterSpacing: 3.0,
-                    color: Color(0xFF6D54A5),
+                    color: Theme.of(context).colorScheme.primary,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -130,12 +140,13 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _buildSwitchCard() {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
       decoration: BoxDecoration(
-        color: const Color(0xFFF6F6F7),
+        color: scheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFD4CDDF)),
+        border: Border.all(color: scheme.outlineVariant),
         boxShadow: const [
           BoxShadow(
             color: Color(0x1A000000),
@@ -146,18 +157,18 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
       child: Row(
         children: [
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Smooth Animations',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text(
                   'Delightful transitions and movements',
-                  style: TextStyle(color: Color(0xFF8C8693)),
+                  style: TextStyle(color: scheme.onSurfaceVariant),
                 ),
               ],
             ),
@@ -169,6 +180,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _buildReminderCard(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return InkWell(
       borderRadius: BorderRadius.circular(24),
       onTap: () {
@@ -179,9 +191,9 @@ class _SettingsPageState extends State<SettingsPage> {
       child: Container(
         padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
         decoration: BoxDecoration(
-          color: const Color(0xFFF6F6F7),
+          color: scheme.surfaceContainerHigh,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: const Color(0xFFD4CDDF)),
+          border: Border.all(color: scheme.outlineVariant),
           boxShadow: const [
             BoxShadow(
               color: Color(0x14000000),
@@ -190,25 +202,25 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ],
         ),
-        child: const Row(
+        child: Row(
           children: [
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     'Smart Reminders',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
                     'Manage pending alarms and reminder states',
-                    style: TextStyle(color: Color(0xFF8C8693)),
+                    style: TextStyle(color: scheme.onSurfaceVariant),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.chevron_right_rounded, color: Color(0xFF8F8A97)),
+            Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
           ],
         ),
       ),
@@ -216,6 +228,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _buildStatsCard(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return InkWell(
       borderRadius: BorderRadius.circular(24),
       onTap: () {
@@ -226,9 +239,9 @@ class _SettingsPageState extends State<SettingsPage> {
       child: Container(
         padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
         decoration: BoxDecoration(
-          color: const Color(0xFFF6F6F7),
+          color: scheme.surfaceContainerHigh,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: const Color(0xFFD4CDDF)),
+          border: Border.all(color: scheme.outlineVariant),
           boxShadow: const [
             BoxShadow(
               color: Color(0x14000000),
@@ -237,27 +250,85 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ],
         ),
-        child: const Row(
+        child: Row(
           children: [
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     'Productivity Stats',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
                     'Completion rate, streaks, and average delay',
-                    style: TextStyle(color: Color(0xFF8C8693)),
+                    style: TextStyle(color: scheme.onSurfaceVariant),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.chevron_right_rounded, color: Color(0xFF8F8A97)),
+            Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildThemeModeCard() {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: scheme.outlineVariant),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x1A000000),
+            blurRadius: 7,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Appearance',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Choose app theme mode',
+            style: TextStyle(color: scheme.onSurfaceVariant),
+          ),
+          const SizedBox(height: 12),
+          SegmentedButton<ThemeMode>(
+            segments: const [
+              ButtonSegment<ThemeMode>(
+                value: ThemeMode.system,
+                label: Text('System'),
+                icon: Icon(Icons.phone_android_rounded),
+              ),
+              ButtonSegment<ThemeMode>(
+                value: ThemeMode.light,
+                label: Text('Light'),
+                icon: Icon(Icons.light_mode_rounded),
+              ),
+              ButtonSegment<ThemeMode>(
+                value: ThemeMode.dark,
+                label: Text('Dark'),
+                icon: Icon(Icons.dark_mode_rounded),
+              ),
+            ],
+            selected: <ThemeMode>{_themeMode},
+            onSelectionChanged: (selection) {
+              if (selection.isEmpty) return;
+              _setThemeMode(selection.first);
+            },
+          ),
+        ],
       ),
     );
   }

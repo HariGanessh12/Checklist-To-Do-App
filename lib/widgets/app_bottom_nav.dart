@@ -11,10 +11,7 @@ enum AppTab { tasks, individual, groups, done, search, more }
 class AppBottomNav extends StatelessWidget {
   final AppTab currentTab;
 
-  const AppBottomNav({
-    super.key,
-    required this.currentTab,
-  });
+  const AppBottomNav({super.key, required this.currentTab});
 
   void _goTo(BuildContext context, AppTab tab) {
     if (tab == currentTab) return;
@@ -41,19 +38,19 @@ class AppBottomNav extends StatelessWidget {
         break;
     }
 
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => page),
-    );
+    Navigator.of(
+      context,
+    ).pushReplacement(MaterialPageRoute(builder: (_) => page));
   }
 
   @override
   Widget build(BuildContext context) {
-    final Color selectedColor = Theme.of(context).colorScheme.primary;
+    final scheme = Theme.of(context).colorScheme;
 
     return NavigationBar(
       selectedIndex: currentTab.index,
-      backgroundColor: const Color(0xFFF3F0F8),
-      indicatorColor: selectedColor.withValues(alpha: 0.18),
+      backgroundColor: scheme.surfaceContainer,
+      indicatorColor: scheme.primary.withValues(alpha: 0.2),
       labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
       onDestinationSelected: (index) => _goTo(context, AppTab.values[index]),
       destinations: const [

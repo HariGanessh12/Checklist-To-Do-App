@@ -59,7 +59,7 @@ class _GroupsPageState extends State<GroupsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F1F7),
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -97,6 +97,7 @@ class _GroupsPageState extends State<GroupsPage> {
   }
 
   Widget _buildGroupCard(TaskGroup group) {
+    final scheme = Theme.of(context).colorScheme;
     return InkWell(
       onTap: () {
         Navigator.push(
@@ -108,11 +109,15 @@ class _GroupsPageState extends State<GroupsPage> {
       child: Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: const Color(0xFFF6F6F7),
+          color: scheme.surfaceContainerHigh,
           borderRadius: BorderRadius.circular(26),
-          border: Border.all(color: const Color(0xFFD6D1DD)),
+          border: Border.all(color: scheme.outlineVariant),
           boxShadow: const [
-            BoxShadow(color: Color(0x14000000), blurRadius: 6, offset: Offset(0, 2)),
+            BoxShadow(
+              color: Color(0x14000000),
+              blurRadius: 6,
+              offset: Offset(0, 2),
+            ),
           ],
         ),
         child: Column(
@@ -152,27 +157,32 @@ class _GroupsPageState extends State<GroupsPage> {
   }
 
   Widget _buildNewGroupCard() {
+    final scheme = Theme.of(context).colorScheme;
     return InkWell(
       onTap: () => _showGroupSheet(),
       borderRadius: BorderRadius.circular(26),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(26),
-          border: Border.all(color: const Color(0xFFBEB5CA), width: 2, style: BorderStyle.solid),
+          border: Border.all(
+            color: scheme.outline,
+            width: 2,
+            style: BorderStyle.solid,
+          ),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
+          children: [
             CircleAvatar(
               radius: 22,
-              backgroundColor: Color(0xFFE9E1F3),
-              child: Icon(Icons.add_rounded, color: Color(0xFF6D54A5)),
+              backgroundColor: scheme.primaryContainer,
+              child: Icon(Icons.add_rounded, color: scheme.onPrimaryContainer),
             ),
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             Text(
               'NEW GROUP',
               style: TextStyle(
-                color: Color(0xFF6D54A5),
+                color: scheme.primary,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 1.0,
               ),

@@ -4,6 +4,8 @@ import '../models/task_group_model.dart';
 import '../services/storage_service.dart';
 import '../services/notification_service.dart';
 import '../services/recurrence_service.dart';
+import '../services/task_completion_service.dart';
+import '../services/task_template_service.dart';
 import '../widgets/add_edit_task_sheet.dart';
 import '../widgets/task_card_widget.dart';
 import '../widgets/task_detail_sheet.dart';
@@ -19,11 +21,31 @@ class GroupDetailPage extends StatefulWidget {
 class _GroupDetailPageState extends State<GroupDetailPage> {
   final GlobalKey<AnimatedListState> _listKey = GlobalKey<AnimatedListState>();
   List<Task> _groupTasks = [];
+  bool _animationsEnabled = true;
 
   @override
   void initState() {
     super.initState();
+    _animationsEnabled = StorageService.getAnimationsEnabled();
+    StorageService.animationsEnabledNotifier.addListener(
+      _onAnimationSettingChanged,
+    );
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    StorageService.animationsEnabledNotifier.removeListener(
+      _onAnimationSettingChanged,
+    );
+    super.dispose();
+  }
+
+  void _onAnimationSettingChanged() {
+    if (!mounted) return;
+    setState(() {
+      _animationsEnabled = StorageService.animationsEnabledNotifier.value;
+    });
   }
 
   void _loadData() {
@@ -55,7 +77,12 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           (entry) => entry.id == task.id,
         );
         if (insertIndex != -1) {
-          _listKey.currentState?.insertItem(insertIndex);
+          _listKey.currentState?.insertItem(
+            insertIndex,
+            duration: _animationsEnabled
+                ? const Duration(milliseconds: 300)
+                : Duration.zero,
+          );
         }
       } else {
         final index = allTasks.indexWhere((t) => t.id == task.id);
@@ -77,6 +104,9 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     _listKey.currentState?.removeItem(
       index,
       (context, animation) => _buildAnimatedItem(removedTask, animation),
+      duration: _animationsEnabled
+          ? const Duration(milliseconds: 300)
+          : Duration.zero,
     );
 
     final allTasks = StorageService.getTasks();
@@ -103,6 +133,12 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   }
 
   void _toggleTask(Task task) {
+    if (!TaskCompletionService.canCompleteNow(task)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(TaskCompletionService.blockedMessage(task))),
+      );
+      return;
+    }
     final index = _groupTasks.indexWhere((t) => t.id == task.id);
     if (index == -1) return;
 
@@ -116,10 +152,18 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       _listKey.currentState?.removeItem(
         index,
         (context, animation) => _buildAnimatedItem(updated, animation),
+        duration: _animationsEnabled
+            ? const Duration(milliseconds: 300)
+            : Duration.zero,
       );
       if (nextTask != null && nextTask.groupId == widget.group.id) {
         _groupTasks.insert(0, nextTask);
-        _listKey.currentState?.insertItem(0);
+        _listKey.currentState?.insertItem(
+          0,
+          duration: _animationsEnabled
+              ? const Duration(milliseconds: 300)
+              : Duration.zero,
+        );
       }
     });
 
@@ -151,6 +195,14 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     );
   }
 
+  Future<void> _saveTaskAsTemplate(Task task, String templateName) async {
+    await TaskTemplateService.createFromTask(task, name: templateName);
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Template "$templateName" created')));
+  }
+
   void _togglePin(Task task) {
     final allTasks = StorageService.getTasks();
     final idx = allTasks.indexWhere((entry) => entry.id == task.id);
@@ -162,6 +214,19 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   }
 
   Widget _buildAnimatedItem(Task task, Animation<double> animation) {
+    final item = Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: TaskCardWidget(
+        task: task,
+        group: widget.group,
+        onTap: () => _showTaskDetail(task),
+        onToggle: () => _toggleTask(task),
+        onPinToggle: () => _togglePin(task),
+        onNotify: () => _notifyTask(task),
+      ),
+    );
+    if (!_animationsEnabled) return item;
+
     return FadeTransition(
       opacity: animation,
       child: SlideTransition(
@@ -171,17 +236,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
             end: Offset.zero,
           ).chain(CurveTween(curve: Curves.easeOutCubic)),
         ),
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 8.0),
-          child: TaskCardWidget(
-            task: task,
-            group: widget.group,
-            onTap: () => _showTaskDetail(task),
-            onToggle: () => _toggleTask(task),
-            onPinToggle: () => _togglePin(task),
-            onNotify: () => _notifyTask(task),
-          ),
-        ),
+        child: item,
       ),
     );
   }
@@ -200,6 +255,10 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         onDelete: () {
           Navigator.pop(context);
           _deleteTask(task);
+        },
+        onSaveAsTemplate: (templateName) async {
+          Navigator.pop(context);
+          await _saveTaskAsTemplate(task, templateName);
         },
       ),
     );

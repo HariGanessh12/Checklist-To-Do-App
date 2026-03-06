@@ -4,15 +4,29 @@ class ProductivityStats {
   final int totalTasks;
   final int completedTasks;
   final double completionRate; // 0..1
-  final int currentStreakDays;
   final double averageDelayHours;
+  final List<TaskStreakStat> taskStreaks;
 
   const ProductivityStats({
     required this.totalTasks,
     required this.completedTasks,
     required this.completionRate,
-    required this.currentStreakDays,
     required this.averageDelayHours,
+    required this.taskStreaks,
+  });
+}
+
+class TaskStreakStat {
+  final String key;
+  final String title;
+  final String groupId;
+  final int streakDays;
+
+  const TaskStreakStat({
+    required this.key,
+    required this.title,
+    required this.groupId,
+    required this.streakDays,
   });
 }
 
@@ -24,31 +38,64 @@ class ProductivityStatsService {
     final completedCount = completed.length;
     final completionRate = totalCount == 0 ? 0.0 : completedCount / totalCount;
 
-    final streak = _computeStreakDays(completed, current);
+    final taskStreaks = _computeTaskStreaks(tasks, current);
     final avgDelay = _computeAverageDelayHours(completed);
 
     return ProductivityStats(
       totalTasks: totalCount,
       completedTasks: completedCount,
       completionRate: completionRate,
-      currentStreakDays: streak,
       averageDelayHours: avgDelay,
+      taskStreaks: taskStreaks,
     );
   }
 
-  static int _computeStreakDays(List<Task> completedTasks, DateTime now) {
-    if (completedTasks.isEmpty) return 0;
+  static List<TaskStreakStat> _computeTaskStreaks(
+    List<Task> tasks,
+    DateTime now,
+  ) {
+    final tracked = tasks.where((task) => task.streakEnabled).toList();
+    if (tracked.isEmpty) return const [];
 
-    final doneDays = <DateTime>{};
-    for (final task in completedTasks) {
-      final completedAt = task.completedAt;
-      if (completedAt == null) continue;
-      doneDays.add(
-        DateTime(completedAt.year, completedAt.month, completedAt.day),
-      );
+    final grouped = <String, List<Task>>{};
+    for (final task in tracked) {
+      final key = _seriesKey(task);
+      grouped.putIfAbsent(key, () => <Task>[]).add(task);
     }
-    if (doneDays.isEmpty) return 0;
 
+    final result = <TaskStreakStat>[];
+    grouped.forEach((key, seriesTasks) {
+      seriesTasks.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      final latest = seriesTasks.first;
+      final doneDays = <DateTime>{};
+      for (final task in seriesTasks) {
+        final completedAt = task.completedAt;
+        if (completedAt == null) continue;
+        doneDays.add(
+          DateTime(completedAt.year, completedAt.month, completedAt.day),
+        );
+      }
+      final streak = _computeDayStreak(doneDays, now);
+      result.add(
+        TaskStreakStat(
+          key: key,
+          title: latest.title,
+          groupId: latest.groupId,
+          streakDays: streak,
+        ),
+      );
+    });
+
+    result.sort((a, b) {
+      final streakCompare = b.streakDays.compareTo(a.streakDays);
+      if (streakCompare != 0) return streakCompare;
+      return a.title.toLowerCase().compareTo(b.title.toLowerCase());
+    });
+    return result;
+  }
+
+  static int _computeDayStreak(Set<DateTime> doneDays, DateTime now) {
+    if (doneDays.isEmpty) return 0;
     var cursor = DateTime(now.year, now.month, now.day);
     if (!doneDays.contains(cursor)) {
       cursor = cursor.subtract(const Duration(days: 1));
@@ -74,5 +121,9 @@ class ProductivityStatsService {
     if (delays.isEmpty) return 0.0;
     final sum = delays.fold<double>(0.0, (prev, hours) => prev + hours);
     return sum / delays.length;
+  }
+
+  static String _seriesKey(Task task) {
+    return '${task.groupId}::${task.title.trim().toLowerCase()}';
   }
 }

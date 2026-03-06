@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/task_model.dart';
 import '../models/task_group_model.dart';
@@ -7,9 +8,15 @@ import 'home_screen_widget_service.dart';
 
 class StorageService {
   static SharedPreferences? _prefs;
+  static final ValueNotifier<bool> animationsEnabledNotifier =
+      ValueNotifier<bool>(true);
+  static final ValueNotifier<ThemeMode> themeModeNotifier =
+      ValueNotifier<ThemeMode>(ThemeMode.system);
 
   static Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
+    animationsEnabledNotifier.value = getAnimationsEnabled();
+    themeModeNotifier.value = getThemeMode();
   }
 
   // --- Tasks ---
@@ -50,6 +57,31 @@ class StorageService {
 
   static Future<void> saveAnimationsEnabled(bool enabled) async {
     await _prefs?.setBool(AppConstants.settingsKey, enabled);
+    animationsEnabledNotifier.value = enabled;
+  }
+
+  // --- Theme ---
+  static ThemeMode getThemeMode() {
+    final String? raw = _prefs?.getString(AppConstants.themeModeKey);
+    switch (raw) {
+      case 'light':
+        return ThemeMode.light;
+      case 'dark':
+        return ThemeMode.dark;
+      case 'system':
+      default:
+        return ThemeMode.system;
+    }
+  }
+
+  static Future<void> saveThemeMode(ThemeMode mode) async {
+    final String raw = switch (mode) {
+      ThemeMode.light => 'light',
+      ThemeMode.dark => 'dark',
+      ThemeMode.system => 'system',
+    };
+    await _prefs?.setString(AppConstants.themeModeKey, raw);
+    themeModeNotifier.value = mode;
   }
 
   // --- Reminder Presets ---
@@ -65,9 +97,24 @@ class StorageService {
     await HomeScreenWidgetService.updateWidgets();
   }
 
+  // --- Templates ---
+  static List<Map<String, dynamic>> getTemplatesList() {
+    final String? data = _prefs?.getString(AppConstants.templatesKey);
+    if (data == null || data.isEmpty) return [];
+    final List decoded = jsonDecode(data);
+    return decoded.map((entry) => Map<String, dynamic>.from(entry)).toList();
+  }
+
+  static Future<void> saveTemplatesList(List<Map<String, dynamic>> data) async {
+    final String encoded = jsonEncode(data);
+    await _prefs?.setString(AppConstants.templatesKey, encoded);
+  }
+
   // --- Global ---
   static Future<void> clearAllData() async {
     await _prefs?.clear();
+    animationsEnabledNotifier.value = true;
+    themeModeNotifier.value = ThemeMode.system;
     await HomeScreenWidgetService.updateWidgets();
   }
 }

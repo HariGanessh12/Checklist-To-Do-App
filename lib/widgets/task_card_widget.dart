@@ -25,6 +25,7 @@ class TaskCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final isOverdue =
         !task.isCompleted && task.dueDate.isBefore(DateTime.now());
     final totalSubtasks = task.subtasks.length;
@@ -52,7 +53,7 @@ class TaskCardWidget extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
-        side: BorderSide(color: Colors.grey.shade200, width: 1),
+        side: BorderSide(color: scheme.outlineVariant, width: 1),
       ),
       child: InkWell(
         onTap: onTap,
@@ -86,7 +87,9 @@ class TaskCardWidget extends StatelessWidget {
                         decoration: task.isCompleted
                             ? TextDecoration.lineThrough
                             : null,
-                        color: task.isCompleted ? Colors.grey : Colors.black87,
+                        color: task.isCompleted
+                            ? scheme.onSurfaceVariant
+                            : scheme.onSurface,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -127,7 +130,7 @@ class TaskCardWidget extends StatelessWidget {
                             group!.name,
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey.shade600,
+                              color: scheme.onSurfaceVariant,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -136,7 +139,7 @@ class TaskCardWidget extends StatelessWidget {
                             width: 4,
                             height: 4,
                             decoration: BoxDecoration(
-                              color: Colors.grey.shade300,
+                              color: scheme.outlineVariant,
                               shape: BoxShape.circle,
                             ),
                           ),
@@ -145,7 +148,9 @@ class TaskCardWidget extends StatelessWidget {
                         Icon(
                           Icons.access_time_rounded,
                           size: 14,
-                          color: isOverdue ? Colors.red : Colors.grey.shade500,
+                          color: isOverdue
+                              ? Colors.red
+                              : scheme.onSurfaceVariant,
                         ),
                         const SizedBox(width: 4),
                         Text(
@@ -154,7 +159,7 @@ class TaskCardWidget extends StatelessWidget {
                             fontSize: 12,
                             color: isOverdue
                                 ? Colors.red
-                                : Colors.grey.shade500,
+                                : scheme.onSurfaceVariant,
                             fontWeight: isOverdue
                                 ? FontWeight.bold
                                 : FontWeight.normal,
@@ -172,7 +177,7 @@ class TaskCardWidget extends StatelessWidget {
                               child: LinearProgressIndicator(
                                 value: progress,
                                 minHeight: 6,
-                                backgroundColor: Colors.grey.shade200,
+                                backgroundColor: scheme.surfaceContainerHighest,
                                 valueColor: AlwaysStoppedAnimation<Color>(
                                   priorityColor,
                                 ),
@@ -185,7 +190,7 @@ class TaskCardWidget extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
-                              color: Colors.grey.shade700,
+                              color: scheme.onSurfaceVariant,
                             ),
                           ),
                         ],

@@ -1,6 +1,6 @@
 enum TaskPriority { low, medium, high }
 
-enum TaskRecurrence { none, daily, weekly, custom }
+enum TaskRecurrence { none, daily, weekly, custom, monthly }
 
 class Subtask {
   final String title;
@@ -36,6 +36,7 @@ class Task {
   final DateTime dueDate;
   final bool isCompleted;
   final DateTime? completedAt;
+  final bool streakEnabled;
   final bool isPinned;
   final bool notificationEnabled;
   final TaskRecurrence recurrence;
@@ -52,6 +53,7 @@ class Task {
     required this.dueDate,
     this.isCompleted = false,
     this.completedAt,
+    this.streakEnabled = false,
     this.isPinned = false,
     this.notificationEnabled = true,
     this.recurrence = TaskRecurrence.none,
@@ -68,6 +70,7 @@ class Task {
     bool? isCompleted,
     DateTime? completedAt,
     bool clearCompletedAt = false,
+    bool? streakEnabled,
     bool? isPinned,
     bool? notificationEnabled,
     TaskRecurrence? recurrence,
@@ -84,6 +87,7 @@ class Task {
       dueDate: dueDate ?? this.dueDate,
       isCompleted: isCompleted ?? this.isCompleted,
       completedAt: clearCompletedAt ? null : (completedAt ?? this.completedAt),
+      streakEnabled: streakEnabled ?? this.streakEnabled,
       isPinned: isPinned ?? this.isPinned,
       notificationEnabled: notificationEnabled ?? this.notificationEnabled,
       recurrence: recurrence ?? this.recurrence,
@@ -104,6 +108,7 @@ class Task {
       'dueDate': dueDate.toIso8601String(),
       'isCompleted': isCompleted,
       'completedAt': completedAt?.toIso8601String(),
+      'streakEnabled': streakEnabled,
       'isPinned': isPinned,
       'notificationEnabled': notificationEnabled,
       'recurrence': recurrence.index,
@@ -125,6 +130,7 @@ class Task {
       completedAt: json['completedAt'] == null
           ? null
           : DateTime.parse(json['completedAt']),
+      streakEnabled: json['streakEnabled'] ?? false,
       isPinned: json['isPinned'] ?? false,
       notificationEnabled: json['notificationEnabled'] ?? true,
       recurrence: TaskRecurrence.values[json['recurrence'] ?? 0],
