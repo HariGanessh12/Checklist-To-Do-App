@@ -84,13 +84,13 @@ class _CompletedTasksPageState extends State<CompletedTasksPage> {
                     style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
                   ),
                   const Spacer(),
-                  if (_completedTasks.isNotEmpty)
-                    TextButton(
-                      onPressed: _clearAll,
-                      child: const Text(
-                        'CLEAR ALL',
-                        style: TextStyle(
-                          color: Color(0xFFC1332C),
+                if (_completedTasks.isNotEmpty)
+                  TextButton(
+                    onPressed: _clearAll,
+                    child: Text(
+                      'CLEAR ALL',
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -134,13 +134,13 @@ class _CompletedTasksPageState extends State<CompletedTasksPage> {
             height: 190,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.grey.shade200,
+              color: scheme.surfaceContainerHigh,
             ),
             alignment: Alignment.center,
-            child: const Icon(
+            child: Icon(
               Icons.emoji_events_rounded,
               size: 66,
-              color: Color(0xFFF0B43C),
+              color: scheme.tertiary,
             ),
           ),
           const SizedBox(height: 32),

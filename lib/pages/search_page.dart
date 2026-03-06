@@ -661,15 +661,13 @@ class _SearchPageState extends State<SearchPage> {
             height: 190,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.grey.shade200,
+              color: scheme.surfaceContainerHigh,
             ),
             alignment: Alignment.center,
             child: Icon(
               hasQuery ? Icons.search_rounded : Icons.auto_awesome_rounded,
               size: 66,
-              color: hasQuery
-                  ? Theme.of(context).colorScheme.primary
-                  : const Color(0xFFFFB84D),
+              color: hasQuery ? scheme.primary : scheme.tertiary,
             ),
           ),
           const SizedBox(height: 32),

@@ -89,10 +89,12 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
   }
 
   Future<void> _pickDateTime() async {
+    final now = DateTime.now();
+    final firstAllowedDate = DateTime(now.year - 5, now.month, now.day);
     final DateTime? date = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
-      firstDate: DateTime.now().subtract(const Duration(days: 0)),
+      firstDate: firstAllowedDate,
       lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
     );
 
@@ -134,6 +136,7 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final canSave = _titleController.text.trim().isNotEmpty;
     return Container(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -172,21 +175,39 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
             const SizedBox(height: 24),
             TextField(
               controller: _titleController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
+                labelText: 'Title',
                 hintText: "What needs to be done?",
-                border: InputBorder.none,
-                hintStyle: TextStyle(fontSize: 20, color: Colors.grey),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: scheme.primary, width: 1.4),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 14,
+                ),
               ),
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               autofocus: widget.taskToEdit == null,
+              onChanged: (_) => setState(() {}),
             ),
+            const SizedBox(height: 12),
             TextField(
               controller: _descriptionController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
+                labelText: 'Notes',
                 hintText: "Add notes...",
-                icon: Icon(Icons.notes_rounded, size: 20),
-                border: InputBorder.none,
-                hintStyle: TextStyle(fontSize: 14, color: Colors.grey),
+                prefixIcon: const Icon(Icons.notes_rounded, size: 20),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
               ),
               style: const TextStyle(fontSize: 14),
               maxLines: 3,
@@ -230,6 +251,7 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
                           });
                         },
                       ),
+                      const SizedBox(width: 4),
                       Expanded(
                         child: TextField(
                           controller: _subtaskControllers[index],
@@ -245,6 +267,7 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
                           },
                         ),
                       ),
+                      const SizedBox(width: 4),
                       IconButton(
                         onPressed: () => _removeSubtask(index),
                         icon: const Icon(Icons.close_rounded),
@@ -283,7 +306,7 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
                           const SizedBox(height: 4),
                           Text(
                             DateFormat(
-                              'EEEE, MMM d • hh:mm a',
+                              'EEEE, MMM d - hh:mm a',
                             ).format(_selectedDate),
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
@@ -333,11 +356,14 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
             ),
             const SizedBox(height: 12),
             Row(
-              children: TaskPriority.values.map((p) {
+              children: List.generate(TaskPriority.values.length, (index) {
+                final p = TaskPriority.values[index];
                 final isSelected = _priority == p;
                 return Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(right: 8),
+                    padding: EdgeInsets.only(
+                      right: index == TaskPriority.values.length - 1 ? 0 : 8,
+                    ),
                     child: ChoiceChip(
                       label: Center(
                         child: Text(
@@ -350,7 +376,7 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
                     ),
                   ),
                 );
-              }).toList(),
+              }),
             ),
             const SizedBox(height: 18),
             DropdownButtonFormField<TaskRecurrence>(
@@ -434,7 +460,7 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
               items: [
                 const DropdownMenuItem(
                   value: 'individual',
-                  child: Text("ðŸ“¥ Individual"),
+                  child: Text("Individual"),
                 ),
                 ...widget.groups.map(
                   (g) => DropdownMenuItem(
@@ -455,54 +481,57 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                 ),
-                onPressed: () {
-                  if (_titleController.text.trim().isEmpty) return;
-                  final normalizedSubtasks = <Subtask>[];
-                  for (var i = 0; i < _subtasks.length; i++) {
-                    final title = _subtaskControllers[i].text.trim();
-                    if (title.isEmpty) continue;
-                    normalizedSubtasks.add(_subtasks[i].copyWith(title: title));
-                  }
-                  int? recurrenceIntervalDays;
-                  if (_recurrence == TaskRecurrence.custom) {
-                    recurrenceIntervalDays = int.tryParse(
-                      _customRecurrenceController.text.trim(),
-                    );
-                    if (recurrenceIntervalDays == null ||
-                        recurrenceIntervalDays < 1) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Custom recurrence must be at least 1 day.',
-                          ),
-                        ),
-                      );
-                      return;
-                    }
-                  } else {
-                    recurrenceIntervalDays =
-                        widget.taskToEdit?.recurrenceIntervalDays;
-                  }
-                  final task = Task(
-                    id: widget.taskToEdit?.id ?? const Uuid().v4(),
-                    groupId: _selectedGroupId,
-                    title: _titleController.text.trim(),
-                    description: _descriptionController.text.trim(),
-                    priority: _priority,
-                    dueDate: _selectedDate,
-                    isCompleted: widget.taskToEdit?.isCompleted ?? false,
-                    isPinned: widget.taskToEdit?.isPinned ?? false,
-                    streakEnabled: _streakEnabled,
-                    notificationEnabled:
-                        widget.taskToEdit?.notificationEnabled ?? true,
-                    recurrence: _recurrence,
-                    recurrenceIntervalDays: recurrenceIntervalDays,
-                    subtasks: normalizedSubtasks,
-                    createdAt: widget.taskToEdit?.createdAt ?? DateTime.now(),
-                  );
-                  widget.onSave(task);
-                  Navigator.pop(context);
-                },
+                onPressed: canSave
+                    ? () {
+                        final normalizedSubtasks = <Subtask>[];
+                        for (var i = 0; i < _subtasks.length; i++) {
+                          final title = _subtaskControllers[i].text.trim();
+                          if (title.isEmpty) continue;
+                          normalizedSubtasks.add(
+                            _subtasks[i].copyWith(title: title),
+                          );
+                        }
+                        int? recurrenceIntervalDays;
+                        if (_recurrence == TaskRecurrence.custom) {
+                          recurrenceIntervalDays = int.tryParse(
+                            _customRecurrenceController.text.trim(),
+                          );
+                          if (recurrenceIntervalDays == null ||
+                              recurrenceIntervalDays < 1) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Custom recurrence must be at least 1 day.',
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+                        } else {
+                          recurrenceIntervalDays =
+                              widget.taskToEdit?.recurrenceIntervalDays;
+                        }
+                        final task = Task(
+                          id: widget.taskToEdit?.id ?? const Uuid().v4(),
+                          groupId: _selectedGroupId,
+                          title: _titleController.text.trim(),
+                          description: _descriptionController.text.trim(),
+                          priority: _priority,
+                          dueDate: _selectedDate,
+                          isCompleted: widget.taskToEdit?.isCompleted ?? false,
+                          isPinned: widget.taskToEdit?.isPinned ?? false,
+                          streakEnabled: _streakEnabled,
+                          notificationEnabled:
+                              widget.taskToEdit?.notificationEnabled ?? true,
+                          recurrence: _recurrence,
+                          recurrenceIntervalDays: recurrenceIntervalDays,
+                          subtasks: normalizedSubtasks,
+                          createdAt: widget.taskToEdit?.createdAt ?? DateTime.now(),
+                        );
+                        widget.onSave(task);
+                        Navigator.pop(context);
+                      }
+                    : null,
                 child: Text(
                   widget.taskToEdit == null ? "Create Task" : "Save Changes",
                   style: const TextStyle(
@@ -512,10 +541,11 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
                 ),
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 20),
           ],
         ),
       ),
     );
   }
 }
+

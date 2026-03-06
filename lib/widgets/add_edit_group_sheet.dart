@@ -45,9 +45,7 @@ class _AddEditGroupSheetState extends State<AddEditGroupSheet> {
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(
-      text: widget.groupToEdit?.name ?? '',
-    );
+    _nameController = TextEditingController(text: widget.groupToEdit?.name ?? '');
     _selectedIcon = widget.groupToEdit?.icon ?? _icons.first;
     _selectedColor = widget.groupToEdit?.colorValue ?? _colors.first;
   }
@@ -61,6 +59,8 @@ class _AddEditGroupSheetState extends State<AddEditGroupSheet> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final canSave = _nameController.text.trim().isNotEmpty;
+
     return Container(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -70,7 +70,7 @@ class _AddEditGroupSheetState extends State<AddEditGroupSheet> {
       ),
       decoration: BoxDecoration(
         color: scheme.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
       ),
       child: SingleChildScrollView(
         child: Column(
@@ -83,7 +83,7 @@ class _AddEditGroupSheetState extends State<AddEditGroupSheet> {
                 height: 4,
                 margin: const EdgeInsets.only(bottom: 24),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
+                  color: scheme.outlineVariant,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -102,6 +102,7 @@ class _AddEditGroupSheetState extends State<AddEditGroupSheet> {
                 ),
               ),
               autofocus: true,
+              onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 24),
             const Text(
@@ -121,15 +122,12 @@ class _AddEditGroupSheetState extends State<AddEditGroupSheet> {
                     margin: const EdgeInsets.only(right: 8),
                     decoration: BoxDecoration(
                       color: _selectedIcon == _icons[i]
-                          ? Theme.of(context).colorScheme.primaryContainer
+                          ? scheme.primaryContainer
                           : scheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     alignment: Alignment.center,
-                    child: Text(
-                      _icons[i],
-                      style: const TextStyle(fontSize: 24),
-                    ),
+                    child: Text(_icons[i], style: const TextStyle(fontSize: 24)),
                   ),
                 ),
               ),
@@ -166,21 +164,22 @@ class _AddEditGroupSheetState extends State<AddEditGroupSheet> {
               width: double.infinity,
               height: 60,
               child: FilledButton(
-                onPressed: () {
-                  if (_nameController.text.isEmpty) return;
-                  final group = TaskGroup(
-                    id: widget.groupToEdit?.id ?? const Uuid().v4(),
-                    name: _nameController.text.trim(),
-                    icon: _selectedIcon,
-                    colorValue: _selectedColor,
-                  );
-                  widget.onSave(group);
-                  Navigator.pop(context);
-                },
+                onPressed: canSave
+                    ? () {
+                        final group = TaskGroup(
+                          id: widget.groupToEdit?.id ?? const Uuid().v4(),
+                          name: _nameController.text.trim(),
+                          icon: _selectedIcon,
+                          colorValue: _selectedColor,
+                        );
+                        widget.onSave(group);
+                        Navigator.pop(context);
+                      }
+                    : null,
                 child: const Text("Save Group"),
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 20),
           ],
         ),
       ),

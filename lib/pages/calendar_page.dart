@@ -365,8 +365,8 @@ class _CalendarPageState extends State<CalendarPage> {
               Container(
                 width: compact ? 16 : 18,
                 height: compact ? 16 : 18,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF3A7CA5),
+                decoration: BoxDecoration(
+                  color: scheme.primary,
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,

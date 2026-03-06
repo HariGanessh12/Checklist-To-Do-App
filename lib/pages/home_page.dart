@@ -391,13 +391,13 @@ class _HomePageState extends State<HomePage> {
             height: 190,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.grey.shade200,
+              color: scheme.surfaceContainerHigh,
             ),
             alignment: Alignment.center,
-            child: const Icon(
+            child: Icon(
               Icons.auto_awesome_rounded,
               size: 68,
-              color: Color(0xFFFFB84D),
+              color: scheme.primary,
             ),
           ),
           const SizedBox(height: 32),

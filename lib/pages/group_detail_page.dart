@@ -297,16 +297,21 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   }
 
   Widget _buildEmptyState() {
+    final scheme = Theme.of(context).colorScheme;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.checklist_rounded, size: 80, color: Colors.grey.shade200),
+          Icon(
+            Icons.checklist_rounded,
+            size: 80,
+            color: scheme.surfaceContainerHighest,
+          ),
           const SizedBox(height: 16),
           Text(
             "Clear skies in ${widget.group.name}",
             style: TextStyle(
-              color: Colors.grey.shade400,
+              color: scheme.onSurfaceVariant,
               fontSize: 18,
               fontWeight: FontWeight.w500,
             ),
@@ -314,7 +319,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           const SizedBox(height: 8),
           Text(
             "No pending tasks here",
-            style: TextStyle(color: Colors.grey.shade300),
+            style: TextStyle(color: scheme.onSurfaceVariant),
           ),
         ],
       ),

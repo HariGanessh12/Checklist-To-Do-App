@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../models/task_model.dart';
 import '../models/task_group_model.dart';
+import '../models/task_model.dart';
 
 class TaskDetailSheet extends StatelessWidget {
   final Task task;
@@ -20,14 +20,13 @@ class TaskDetailSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final isOverdue =
-        !task.isCompleted && task.dueDate.isBefore(DateTime.now());
+    final isOverdue = !task.isCompleted && task.dueDate.isBefore(DateTime.now());
 
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: scheme.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -38,9 +37,7 @@ class TaskDetailSheet extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Color(
-                    group?.colorValue ?? 0xFF006D77,
-                  ).withValues(alpha: 0.1),
+                  color: Color(group?.colorValue ?? 0xFF006D77).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Text(
@@ -55,10 +52,7 @@ class TaskDetailSheet extends StatelessWidget {
                   children: [
                     Text(
                       task.title,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                     ),
                     Text(
                       group?.name ?? "Individual",
@@ -105,21 +99,15 @@ class TaskDetailSheet extends StatelessWidget {
                           ? Icons.check_circle_rounded
                           : Icons.radio_button_unchecked_rounded,
                       size: 18,
-                      color: subtask.isCompleted
-                          ? Colors.green
-                          : Colors.grey.shade500,
+                      color: subtask.isCompleted ? Colors.green : scheme.onSurfaceVariant,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         subtask.title,
                         style: TextStyle(
-                          decoration: subtask.isCompleted
-                              ? TextDecoration.lineThrough
-                              : null,
-                          color: subtask.isCompleted
-                              ? scheme.onSurfaceVariant
-                              : scheme.onSurface,
+                          decoration: subtask.isCompleted ? TextDecoration.lineThrough : null,
+                          color: subtask.isCompleted ? scheme.onSurfaceVariant : scheme.onSurface,
                         ),
                       ),
                     ),
@@ -142,14 +130,14 @@ class TaskDetailSheet extends StatelessWidget {
               Icon(
                 Icons.calendar_today_rounded,
                 size: 18,
-                color: isOverdue ? Colors.red : Colors.blue,
+                color: isOverdue ? scheme.error : scheme.primary,
               ),
               const SizedBox(width: 8),
               Text(
-                DateFormat('EEEE, MMM dd • hh:mm a').format(task.dueDate),
+                DateFormat('EEEE, MMM dd - hh:mm a').format(task.dueDate),
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  color: isOverdue ? Colors.red : scheme.onSurface,
+                  color: isOverdue ? scheme.error : scheme.onSurface,
                 ),
               ),
             ],
@@ -161,7 +149,7 @@ class TaskDetailSheet extends StatelessWidget {
                 Icon(
                   Icons.repeat_rounded,
                   size: 18,
-                  color: Colors.grey.shade700,
+                  color: scheme.onSurfaceVariant,
                 ),
                 const SizedBox(width: 8),
                 Text(
@@ -188,14 +176,12 @@ class TaskDetailSheet extends StatelessWidget {
               Expanded(
                 child: FilledButton.icon(
                   style: FilledButton.styleFrom(
-                    backgroundColor: Colors.red.withValues(alpha: 0.1),
+                    backgroundColor: scheme.errorContainer,
+                    foregroundColor: scheme.onErrorContainer,
                   ),
                   onPressed: onDelete,
-                  icon: Icon(Icons.delete_rounded, color: Colors.red.shade700),
-                  label: Text(
-                    "Delete",
-                    style: TextStyle(color: Colors.red.shade700),
-                  ),
+                  icon: const Icon(Icons.delete_rounded),
+                  label: const Text("Delete"),
                 ),
               ),
             ],
@@ -221,5 +207,4 @@ class TaskDetailSheet extends StatelessWidget {
         return 'Repeats monthly';
     }
   }
-
 }

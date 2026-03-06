@@ -143,10 +143,10 @@ class _GroupsPageState extends State<GroupsPage> {
             const SizedBox(height: 6),
             Text(
               '${_countTasksInGroup(group.id)} TASKS',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 letterSpacing: 1.1,
-                color: Color(0xFF908A9A),
+                color: scheme.onSurfaceVariant,
                 fontWeight: FontWeight.w700,
               ),
             ),

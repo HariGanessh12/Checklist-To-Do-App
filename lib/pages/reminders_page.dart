@@ -128,7 +128,7 @@ class _RemindersPageState extends State<RemindersPage> {
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
-            side: BorderSide(color: Colors.grey.shade300),
+            side: BorderSide(color: scheme.outlineVariant),
           ),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(14, 10, 12, 10),

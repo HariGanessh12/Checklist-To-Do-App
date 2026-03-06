@@ -213,13 +213,13 @@ class _IndividualTasksPageState extends State<IndividualTasksPage> {
             height: 180,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.grey.shade200,
+              color: scheme.surfaceContainerHigh,
             ),
             alignment: Alignment.center,
-            child: const Icon(
+            child: Icon(
               Icons.inbox_rounded,
               size: 58,
-              color: Color(0xFF4C8ED9),
+              color: scheme.primary,
             ),
           ),
           const SizedBox(height: 30),

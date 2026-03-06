@@ -106,8 +106,8 @@ class _SettingsPageState extends State<SettingsPage> {
                 width: double.infinity,
                 child: FilledButton(
                   style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFFECCFCB),
-                    foregroundColor: const Color(0xFFBF2B22),
+                    backgroundColor: Theme.of(context).colorScheme.errorContainer,
+                    foregroundColor: Theme.of(context).colorScheme.onErrorContainer,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),
                     ),
@@ -125,7 +125,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 child: Text(
                   'BUILD 2024.12.01 - V1.5.0',
                   style: TextStyle(
-                    color: Colors.grey.shade500,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 1.0,
                   ),
