@@ -5,6 +5,7 @@ import '../models/task_model.dart';
 import '../models/task_group_model.dart';
 import '../core/app_constants.dart';
 import 'home_screen_widget_service.dart';
+import 'recurrence_service.dart';
 
 class StorageService {
   static SharedPreferences? _prefs;
@@ -24,7 +25,12 @@ class StorageService {
     final String? data = _prefs?.getString(AppConstants.tasksKey);
     if (data == null) return [];
     final List decoded = jsonDecode(data);
-    return decoded.map((e) => Task.fromJson(e)).toList();
+    final tasks = decoded.map((e) => Task.fromJson(e)).toList();
+    final rolled = RecurrenceService.rollOverMissedDailyTasks(tasks);
+    if (!identical(tasks, rolled)) {
+      saveTasks(rolled);
+    }
+    return rolled;
   }
 
   static Future<void> saveTasks(List<Task> tasks) async {
@@ -95,19 +101,6 @@ class StorageService {
     final String encoded = jsonEncode(data);
     await _prefs?.setString(AppConstants.reminderPresetsKey, encoded);
     await HomeScreenWidgetService.updateWidgets();
-  }
-
-  // --- Templates ---
-  static List<Map<String, dynamic>> getTemplatesList() {
-    final String? data = _prefs?.getString(AppConstants.templatesKey);
-    if (data == null || data.isEmpty) return [];
-    final List decoded = jsonDecode(data);
-    return decoded.map((entry) => Map<String, dynamic>.from(entry)).toList();
-  }
-
-  static Future<void> saveTemplatesList(List<Map<String, dynamic>> data) async {
-    final String encoded = jsonEncode(data);
-    await _prefs?.setString(AppConstants.templatesKey, encoded);
   }
 
   // --- Global ---

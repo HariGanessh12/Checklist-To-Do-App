@@ -4,6 +4,45 @@ import 'dart:math';
 import '../models/task_model.dart';
 
 class RecurrenceService {
+  static List<Task> rollOverMissedDailyTasks(
+    List<Task> tasks, {
+    DateTime? now,
+  }) {
+    final current = now ?? DateTime.now();
+    final todayStart = DateTime(current.year, current.month, current.day);
+    var changed = false;
+
+    final updated = tasks.map((task) {
+      if (task.isCompleted || task.recurrence != TaskRecurrence.daily) {
+        return task;
+      }
+      if (!task.dueDate.isBefore(todayStart)) {
+        return task;
+      }
+
+      changed = true;
+      final rolledDueDate = DateTime(
+        todayStart.year,
+        todayStart.month,
+        todayStart.day,
+        task.dueDate.hour,
+        task.dueDate.minute,
+        task.dueDate.second,
+        task.dueDate.millisecond,
+        task.dueDate.microsecond,
+      );
+
+      return task.copyWith(
+        dueDate: rolledDueDate,
+        subtasks: task.subtasks
+            .map((subtask) => subtask.copyWith(isCompleted: false))
+            .toList(),
+      );
+    }).toList();
+
+    return changed ? updated : tasks;
+  }
+
   static Task? nextOccurrenceFor(Task task, {DateTime? now}) {
     if (task.recurrence == TaskRecurrence.none) return null;
 

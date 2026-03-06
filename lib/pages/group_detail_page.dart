@@ -5,7 +5,6 @@ import '../services/storage_service.dart';
 import '../services/notification_service.dart';
 import '../services/recurrence_service.dart';
 import '../services/task_completion_service.dart';
-import '../services/task_template_service.dart';
 import '../widgets/add_edit_task_sheet.dart';
 import '../widgets/task_card_widget.dart';
 import '../widgets/task_detail_sheet.dart';
@@ -195,14 +194,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     );
   }
 
-  Future<void> _saveTaskAsTemplate(Task task, String templateName) async {
-    await TaskTemplateService.createFromTask(task, name: templateName);
-    if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('Template "$templateName" created')));
-  }
-
   void _togglePin(Task task) {
     final allTasks = StorageService.getTasks();
     final idx = allTasks.indexWhere((entry) => entry.id == task.id);
@@ -255,10 +246,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         onDelete: () {
           Navigator.pop(context);
           _deleteTask(task);
-        },
-        onSaveAsTemplate: (templateName) async {
-          Navigator.pop(context);
-          await _saveTaskAsTemplate(task, templateName);
         },
       ),
     );

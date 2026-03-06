@@ -3,8 +3,6 @@ import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import '../models/task_model.dart';
 import '../models/task_group_model.dart';
-import '../pages/template_manager_page.dart';
-import '../services/task_template_service.dart';
 
 class AddEditTaskSheet extends StatefulWidget {
   final List<TaskGroup> groups;
@@ -35,7 +33,6 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
   late bool _streakEnabled;
   late String _selectedGroupId;
   late DateTime _selectedDate;
-  List<TaskTemplate> _templates = const [];
 
   @override
   void initState() {
@@ -63,7 +60,6 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
     _selectedDate =
         widget.taskToEdit?.dueDate ??
         DateTime.now().add(const Duration(hours: 1));
-    _templates = TaskTemplateService.templates;
   }
 
   @override
@@ -84,40 +80,11 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
     });
   }
 
-  void _refreshTemplates() {
-    setState(() {
-      _templates = TaskTemplateService.templates;
-    });
-  }
-
   void _removeSubtask(int index) {
     setState(() {
       _subtaskControllers[index].dispose();
       _subtaskControllers.removeAt(index);
       _subtasks.removeAt(index);
-    });
-  }
-
-  void _applyTemplate(TaskTemplate template) {
-    for (final controller in _subtaskControllers) {
-      controller.dispose();
-    }
-    setState(() {
-      _titleController.text = template.title;
-      _descriptionController.text = template.description;
-      _priority = template.priority;
-      _recurrence = template.recurrence;
-      _customRecurrenceController.text = (template.recurrenceIntervalDays ?? 2)
-          .toString();
-      _subtasks = template.subtasks
-          .map(
-            (subtask) =>
-                Subtask(title: subtask.title, isCompleted: subtask.isCompleted),
-          )
-          .toList();
-      _subtaskControllers = _subtasks
-          .map((subtask) => TextEditingController(text: subtask.title))
-          .toList();
     });
   }
 
@@ -201,44 +168,6 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
                 fontWeight: FontWeight.bold,
                 letterSpacing: -0.5,
               ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                const Expanded(
-                  child: Text(
-                    "Templates",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                  ),
-                ),
-                TextButton.icon(
-                  onPressed: () async {
-                    await Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const TemplateManagerPage(),
-                      ),
-                    );
-                    if (!mounted) return;
-                    _refreshTemplates();
-                  },
-                  icon: const Icon(Icons.tune_rounded, size: 18),
-                  label: const Text('Manage'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _templates
-                  .map(
-                    (template) => ActionChip(
-                      avatar: const Icon(Icons.auto_fix_high_rounded, size: 16),
-                      label: Text(template.name),
-                      onPressed: () => _applyTemplate(template),
-                    ),
-                  )
-                  .toList(),
             ),
             const SizedBox(height: 24),
             TextField(

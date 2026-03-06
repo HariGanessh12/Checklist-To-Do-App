@@ -8,7 +8,6 @@ class TaskDetailSheet extends StatelessWidget {
   final TaskGroup? group;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
-  final Future<void> Function(String templateName)? onSaveAsTemplate;
 
   const TaskDetailSheet({
     super.key,
@@ -16,7 +15,6 @@ class TaskDetailSheet extends StatelessWidget {
     this.group,
     required this.onEdit,
     required this.onDelete,
-    this.onSaveAsTemplate,
   });
 
   @override
@@ -176,17 +174,6 @@ class TaskDetailSheet extends StatelessWidget {
               ],
             ),
           ],
-          if (onSaveAsTemplate != null) ...[
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () => _promptSaveAsTemplate(context),
-                icon: const Icon(Icons.bookmark_add_rounded),
-                label: const Text('Create Template From Task'),
-              ),
-            ),
-          ],
           const SizedBox(height: 32),
           Row(
             children: [
@@ -235,41 +222,4 @@ class TaskDetailSheet extends StatelessWidget {
     }
   }
 
-  Future<void> _promptSaveAsTemplate(BuildContext context) async {
-    final controller = TextEditingController(text: task.title);
-    final templateName = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Save as template'),
-          content: TextField(
-            controller: controller,
-            autofocus: true,
-            decoration: const InputDecoration(
-              labelText: 'Template name',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () {
-                final value = controller.text.trim();
-                if (value.isEmpty) return;
-                Navigator.pop(dialogContext, value);
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
-    controller.dispose();
-
-    if (templateName == null || templateName.isEmpty) return;
-    await onSaveAsTemplate!(templateName);
-  }
 }
