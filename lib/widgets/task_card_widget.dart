@@ -3,11 +3,12 @@ import 'package:intl/intl.dart';
 import '../models/task_model.dart';
 import '../models/task_group_model.dart';
 
-class TaskCardWidget extends StatelessWidget {
+class TaskCardWidget extends StatefulWidget {
   final Task task;
   final TaskGroup? group;
   final VoidCallback onTap;
   final VoidCallback onToggle;
+  final ValueChanged<int>? onSubtaskToggle;
   final VoidCallback? onPinToggle;
   final VoidCallback? onNotify;
   final bool showGroup;
@@ -19,11 +20,19 @@ class TaskCardWidget extends StatelessWidget {
     this.group,
     required this.onTap,
     required this.onToggle,
+    this.onSubtaskToggle,
     this.onPinToggle,
     this.onNotify,
     this.showGroup = false,
     this.showToggle = true,
   });
+
+  @override
+  State<TaskCardWidget> createState() => _TaskCardWidgetState();
+}
+
+class _TaskCardWidgetState extends State<TaskCardWidget> {
+  bool _showSubtasks = false;
 
   String _formatDurationCompact(Duration duration) {
     final totalMinutes = duration.inMinutes.abs();
@@ -36,6 +45,7 @@ class TaskCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final task = widget.task;
     final scheme = Theme.of(context).colorScheme;
     final dueDate = task.dueDate;
     final completedAt = task.completedAt;
@@ -45,9 +55,10 @@ class TaskCardWidget extends StatelessWidget {
     final completedSubtasks = task.subtasks
         .where((subtask) => subtask.isCompleted)
         .length;
-    final progress = totalSubtasks == 0
-        ? 0.0
-        : completedSubtasks / totalSubtasks;
+    final progress = totalSubtasks == 0 ? 0.0 : completedSubtasks / totalSubtasks;
+    final hasSubtasks = totalSubtasks > 0;
+    final canToggleSubtasks =
+        !task.isCompleted && widget.onSubtaskToggle != null && totalSubtasks > 0;
 
     Color priorityColor;
     switch (task.priority) {
@@ -69,32 +80,56 @@ class TaskCardWidget extends StatelessWidget {
         side: BorderSide(color: scheme.outlineVariant, width: 1),
       ),
       child: InkWell(
-        onTap: onTap,
+        onTap: widget.onTap,
         borderRadius: BorderRadius.circular(24),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
           child: Row(
             children: [
-              if (showToggle)
-                IconButton(
-                  tooltip: task.isCompleted
-                      ? 'Mark as pending'
-                      : 'Mark as completed',
-                  style: IconButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: const Size(34, 34),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    visualDensity: VisualDensity.compact,
-                  ),
-                  icon: Icon(
-                    task.isCompleted
-                        ? Icons.check_circle_rounded
-                        : Icons.circle_outlined,
-                    size: 28,
-                    color: task.isCompleted ? Colors.green : scheme.primary,
-                  ),
-                  onPressed: onToggle,
-                )
+              if (widget.showToggle)
+                hasSubtasks
+                    ? IconButton(
+                        tooltip:
+                            _showSubtasks ? 'Collapse subtasks' : 'Expand subtasks',
+                        style: IconButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: const Size(34, 34),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        icon: Icon(
+                          _showSubtasks
+                              ? Icons.keyboard_arrow_up_rounded
+                              : Icons.keyboard_arrow_down_rounded,
+                          size: 28,
+                          color: scheme.primary,
+                        ),
+                        onPressed: canToggleSubtasks
+                            ? () {
+                                setState(() {
+                                  _showSubtasks = !_showSubtasks;
+                                });
+                              }
+                            : null,
+                      )
+                    : IconButton(
+                        tooltip:
+                            task.isCompleted ? 'Mark as pending' : 'Mark as completed',
+                        style: IconButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: const Size(34, 34),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        icon: Icon(
+                          task.isCompleted
+                              ? Icons.check_circle_rounded
+                              : Icons.circle_outlined,
+                          size: 28,
+                          color: task.isCompleted ? Colors.green : scheme.primary,
+                        ),
+                        onPressed: widget.onToggle,
+                      )
               else
                 const SizedBox(width: 34, height: 34),
               const SizedBox(width: 6),
@@ -102,31 +137,37 @@ class TaskCardWidget extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      task.title,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: task.isCompleted
-                            ? scheme.onSurfaceVariant
-                            : scheme.onSurface,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            task.title,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: task.isCompleted
+                                  ? scheme.onSurfaceVariant
+                                  : scheme.onSurface,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 4),
                     if (task.isCompleted) ...[
-                      if (showGroup && group != null)
+                      if (widget.showGroup && widget.group != null)
                         Row(
                           children: [
                             Text(
-                              group!.icon,
+                              widget.group!.icon,
                               style: const TextStyle(fontSize: 12),
                             ),
                             const SizedBox(width: 6),
                             Expanded(
                               child: Text(
-                                group!.name,
+                                widget.group!.name,
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: scheme.onSurfaceVariant,
@@ -174,7 +215,7 @@ class TaskCardWidget extends StatelessWidget {
                                 Text(
                                   completedAt == null
                                       ? 'Completed'
-                                      : 'Completed • ${DateFormat('MMM d, hh:mm a').format(completedAt)}',
+                                      : 'Completed - ${DateFormat('MMM d, hh:mm a').format(completedAt)}',
                                   style: const TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w700,
@@ -208,7 +249,7 @@ class TaskCardWidget extends StatelessWidget {
                                     ),
                                   );
                                 }
-                                final isLate = delta.isNegative == false;
+                                final isLate = !delta.isNegative;
                                 final label = isLate ? 'Late' : 'Early';
                                 final tone = isLate ? scheme.error : Colors.green;
                                 return Container(
@@ -239,14 +280,14 @@ class TaskCardWidget extends StatelessWidget {
                         runSpacing: 4,
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
-                          if (showGroup && group != null) ...[
+                          if (widget.showGroup && widget.group != null) ...[
                             Text(
-                              group!.icon,
+                              widget.group!.icon,
                               style: const TextStyle(fontSize: 12),
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              group!.name,
+                              widget.group!.name,
                               style: TextStyle(
                                 fontSize: 12,
                                 color: scheme.onSurfaceVariant,
@@ -277,7 +318,8 @@ class TaskCardWidget extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 12,
                               color: isOverdue ? scheme.error : scheme.onSurfaceVariant,
-                              fontWeight: isOverdue ? FontWeight.bold : FontWeight.normal,
+                              fontWeight:
+                                  isOverdue ? FontWeight.bold : FontWeight.normal,
                             ),
                             softWrap: true,
                           ),
@@ -311,17 +353,61 @@ class TaskCardWidget extends StatelessWidget {
                           ),
                         ],
                       ),
+                      if (_showSubtasks && canToggleSubtasks) ...[
+                        const SizedBox(height: 8),
+                        ...List.generate(task.subtasks.length, (index) {
+                          final subtask = task.subtasks[index];
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 6),
+                            child: InkWell(
+                              onTap: () => widget.onSubtaskToggle!(index),
+                              borderRadius: BorderRadius.circular(10),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 4,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      subtask.isCompleted
+                                          ? Icons.radio_button_checked_rounded
+                                          : Icons.radio_button_unchecked_rounded,
+                                      size: 18,
+                                      color: subtask.isCompleted
+                                          ? scheme.primary
+                                          : scheme.onSurfaceVariant,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        subtask.title,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: subtask.isCompleted
+                                              ? scheme.onSurfaceVariant
+                                              : scheme.onSurface,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        }),
+                      ],
                     ],
                     if (!task.isCompleted &&
-                        (onNotify != null || onPinToggle != null)) ...[
+                        (widget.onNotify != null || widget.onPinToggle != null)) ...[
                       const SizedBox(height: 6),
                       Wrap(
                         spacing: 4,
                         runSpacing: 4,
                         children: [
-                          if (onPinToggle != null)
+                          if (widget.onPinToggle != null)
                             TextButton.icon(
-                              onPressed: onPinToggle,
+                              onPressed: widget.onPinToggle,
                               iconAlignment: IconAlignment.start,
                               icon: Icon(
                                 task.isPinned
@@ -340,9 +426,9 @@ class TaskCardWidget extends StatelessWidget {
                                 visualDensity: VisualDensity.compact,
                               ),
                             ),
-                          if (onNotify != null) ...[
+                          if (widget.onNotify != null)
                             TextButton.icon(
-                              onPressed: onNotify,
+                              onPressed: widget.onNotify,
                               iconAlignment: IconAlignment.start,
                               icon: const Icon(
                                 Icons.notifications_active_outlined,
@@ -359,7 +445,6 @@ class TaskCardWidget extends StatelessWidget {
                                 visualDensity: VisualDensity.compact,
                               ),
                             ),
-                          ],
                         ],
                       ),
                     ],

@@ -24,7 +24,7 @@ class _HomePageState extends State<HomePage> {
   List<Task> _tasks = [];
   List<TaskGroup> _groups = [];
   String _selectedGroupId = 'all';
-  TaskTimeFilter _selectedTimeFilter = TaskTimeFilter.all;
+  TaskTimeFilter _selectedTimeFilter = TaskTimeFilter.today;
 
   @override
   void initState() {
@@ -68,21 +68,23 @@ class _HomePageState extends State<HomePage> {
     final tomorrowStart = todayStart.add(const Duration(days: 1));
 
     switch (_selectedTimeFilter) {
-      case TaskTimeFilter.all:
-        return true;
-      case TaskTimeFilter.streak:
-        return task.streakEnabled;
       case TaskTimeFilter.today:
         if (task.dueDate == null) return true;
         return !task.dueDate!.isBefore(now) &&
             !task.dueDate!.isBefore(todayStart) &&
             task.dueDate!.isBefore(tomorrowStart);
+      case TaskTimeFilter.all:
+        return true;
       case TaskTimeFilter.upcoming:
         if (task.dueDate == null) return false;
         return !task.dueDate!.isBefore(tomorrowStart);
       case TaskTimeFilter.overdue:
         if (task.dueDate == null) return false;
         return task.dueDate!.isBefore(now);
+      case TaskTimeFilter.noDue:
+        return task.dueDate == null;
+      case TaskTimeFilter.streak:
+        return task.streakEnabled;
     }
   }
 
@@ -93,10 +95,6 @@ class _HomePageState extends State<HomePage> {
     final source = _groupFilteredTasks;
 
     switch (filter) {
-      case TaskTimeFilter.all:
-        return source.length;
-      case TaskTimeFilter.streak:
-        return source.where((task) => task.streakEnabled).length;
       case TaskTimeFilter.today:
         return source
             .where(
@@ -107,6 +105,8 @@ class _HomePageState extends State<HomePage> {
                       task.dueDate!.isBefore(tomorrowStart)),
             )
             .length;
+      case TaskTimeFilter.all:
+        return source.length;
       case TaskTimeFilter.upcoming:
         return source
             .where(
@@ -119,6 +119,10 @@ class _HomePageState extends State<HomePage> {
         return source
             .where((task) => task.dueDate != null && task.dueDate!.isBefore(now))
             .length;
+      case TaskTimeFilter.noDue:
+        return source.where((task) => task.dueDate == null).length;
+      case TaskTimeFilter.streak:
+        return source.where((task) => task.streakEnabled).length;
     }
   }
 
@@ -175,6 +179,54 @@ class _HomePageState extends State<HomePage> {
     if (nextTask != null) {
       NotificationService.scheduleForTask(nextTask);
     }
+    _loadData();
+  }
+
+  void _toggleSubtask(Task task, int subtaskIndex) {
+    final allTasks = StorageService.getTasks();
+    final idx = allTasks.indexWhere((entry) => entry.id == task.id);
+    if (idx == -1) return;
+    final source = allTasks[idx];
+    if (subtaskIndex < 0 || subtaskIndex >= source.subtasks.length) return;
+
+    final updatedSubtasks = List<Subtask>.from(source.subtasks);
+    final current = updatedSubtasks[subtaskIndex];
+    updatedSubtasks[subtaskIndex] = current.copyWith(
+      isCompleted: !current.isCompleted,
+    );
+    final updatedTask = source.copyWith(subtasks: updatedSubtasks);
+    final allDone = updatedSubtasks.isNotEmpty &&
+        updatedSubtasks.every((entry) => entry.isCompleted);
+
+    if (allDone) {
+      if (!TaskCompletionService.canCompleteNow(updatedTask)) {
+        allTasks[idx] = updatedTask;
+        StorageService.saveTasks(allTasks);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(TaskCompletionService.blockedMessage(updatedTask))),
+        );
+        _loadData();
+        return;
+      }
+      allTasks[idx] = updatedTask.copyWith(
+        isCompleted: true,
+        completedAt: DateTime.now(),
+      );
+      final nextTask = RecurrenceService.nextOccurrenceFor(updatedTask);
+      if (nextTask != null) {
+        allTasks.insert(0, nextTask);
+      }
+      StorageService.saveTasks(allTasks);
+      NotificationService.cancelForTask(updatedTask.id);
+      if (nextTask != null) {
+        NotificationService.scheduleForTask(nextTask);
+      }
+      _loadData();
+      return;
+    }
+
+    allTasks[idx] = updatedTask;
+    StorageService.saveTasks(allTasks);
     _loadData();
   }
 
@@ -272,6 +324,7 @@ class _HomePageState extends State<HomePage> {
                           showGroup: _selectedGroupId == 'all',
                           onTap: () => _showTaskDetail(task),
                           onToggle: () => _toggleTaskCompletion(task),
+                          onSubtaskToggle: (index) => _toggleSubtask(task, index),
                           onPinToggle: () => _togglePin(task),
                           onNotify: () => _notifyTask(task),
                         );
@@ -339,19 +392,14 @@ class _HomePageState extends State<HomePage> {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         children: [
           _buildTimeFilterChip(
-            label: 'All',
-            count: _countForFilter(TaskTimeFilter.all),
-            filter: TaskTimeFilter.all,
-          ),
-          _buildTimeFilterChip(
-            label: 'Streak',
-            count: _countForFilter(TaskTimeFilter.streak),
-            filter: TaskTimeFilter.streak,
-          ),
-          _buildTimeFilterChip(
             label: 'Today',
             count: _countForFilter(TaskTimeFilter.today),
             filter: TaskTimeFilter.today,
+          ),
+          _buildTimeFilterChip(
+            label: 'All',
+            count: _countForFilter(TaskTimeFilter.all),
+            filter: TaskTimeFilter.all,
           ),
           _buildTimeFilterChip(
             label: 'Upcoming',
@@ -362,6 +410,16 @@ class _HomePageState extends State<HomePage> {
             label: 'Overdue',
             count: _countForFilter(TaskTimeFilter.overdue),
             filter: TaskTimeFilter.overdue,
+          ),
+          _buildTimeFilterChip(
+            label: 'No due',
+            count: _countForFilter(TaskTimeFilter.noDue),
+            filter: TaskTimeFilter.noDue,
+          ),
+          _buildTimeFilterChip(
+            label: 'Streaks',
+            count: _countForFilter(TaskTimeFilter.streak),
+            filter: TaskTimeFilter.streak,
           ),
         ],
       ),
@@ -407,4 +465,4 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-enum TaskTimeFilter { all, streak, today, upcoming, overdue }
+enum TaskTimeFilter { today, all, upcoming, overdue, noDue, streak }

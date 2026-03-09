@@ -247,17 +247,6 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Row(
                     children: [
-                      Checkbox(
-                        value: _subtasks[index].isCompleted,
-                        onChanged: (value) {
-                          setState(() {
-                            _subtasks[index] = _subtasks[index].copyWith(
-                              isCompleted: value ?? false,
-                            );
-                          });
-                        },
-                      ),
-                      const SizedBox(width: 4),
                       Expanded(
                         child: TextField(
                           controller: _subtaskControllers[index],
@@ -472,7 +461,7 @@ class _AddEditTaskSheetState extends State<AddEditTaskSheet> {
                 style: TextStyle(fontWeight: FontWeight.w600),
               ),
               subtitle: const Text(
-                'Shows a dedicated streak in Productivity Stats.',
+                'Shows a dedicated streak in the Streaks page.',
               ),
               value: _streakEnabled,
               onChanged: (value) => setState(() {

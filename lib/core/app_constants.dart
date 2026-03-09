@@ -7,6 +7,11 @@ class AppConstants {
   static const String reminderPresetsKey = "m3_reminder_presets_storage";
   static const String recycleBinTasksKey = "m3_recycle_bin_tasks_storage";
   static const String recycleBinGroupsKey = "m3_recycle_bin_groups_storage";
+  static const String authUsernameKey = "m3_auth_username_storage";
+  static const String authPasswordKey = "m3_auth_password_storage";
+  static const String authSignedInKey = "m3_auth_signed_in_storage";
+  static const String authAccountsKey = "m3_auth_accounts_storage";
+  static const String authCurrentEmailKey = "m3_auth_current_email_storage";
 
   static final List<Map<String, dynamic>> defaultGroups = [
     {

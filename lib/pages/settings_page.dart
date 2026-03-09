@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'sign_in_page.dart';
 import 'reminders_page.dart';
 import 'productivity_stats_page.dart';
 import 'recycle_bin_page.dart';
@@ -70,6 +71,15 @@ class _SettingsPageState extends State<SettingsPage> {
     });
   }
 
+  Future<void> _signOut() async {
+    await StorageService.signOutLocal();
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const SignInPage()),
+      (_) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -108,6 +118,25 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ),
                 const SizedBox(height: 22),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 18),
+                    ),
+                    onPressed: _signOut,
+                    icon: const Icon(Icons.logout_rounded),
+                    label: const Text(
+                      'Sign Out',
+                      style:
+                          TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton(
@@ -223,12 +252,12 @@ class _SettingsPageState extends State<SettingsPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Productivity Stats',
+                  'Streaks',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Completion rate, streaks, and average delay',
+                  'Track your task streak progress',
                   style: TextStyle(color: scheme.onSurfaceVariant),
                 ),
               ],

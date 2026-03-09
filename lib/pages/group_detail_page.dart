@@ -187,6 +187,49 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     }
   }
 
+  void _toggleSubtask(Task task, int subtaskIndex) {
+    final allTasks = StorageService.getTasks();
+    final allIdx = allTasks.indexWhere((entry) => entry.id == task.id);
+    if (allIdx == -1) return;
+    final source = allTasks[allIdx];
+    if (subtaskIndex < 0 || subtaskIndex >= source.subtasks.length) return;
+
+    final updatedSubtasks = List<Subtask>.from(source.subtasks);
+    final current = updatedSubtasks[subtaskIndex];
+    updatedSubtasks[subtaskIndex] = current.copyWith(
+      isCompleted: !current.isCompleted,
+    );
+    final updatedTask = source.copyWith(subtasks: updatedSubtasks);
+    final groupIdx = _groupTasks.indexWhere((entry) => entry.id == source.id);
+    if (groupIdx != -1) {
+      setState(() {
+        _groupTasks[groupIdx] = updatedTask;
+      });
+    }
+
+    final allDone = updatedSubtasks.isNotEmpty &&
+        updatedSubtasks.every((entry) => entry.isCompleted);
+    if (allDone) {
+      if (!TaskCompletionService.canCompleteNow(updatedTask)) {
+        allTasks[allIdx] = updatedTask;
+        StorageService.saveTasks(allTasks);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(TaskCompletionService.blockedMessage(updatedTask))),
+        );
+        _loadData();
+        return;
+      }
+      allTasks[allIdx] = updatedTask;
+      StorageService.saveTasks(allTasks);
+      _toggleTask(updatedTask);
+      return;
+    }
+
+    allTasks[allIdx] = updatedTask;
+    StorageService.saveTasks(allTasks);
+    _loadData();
+  }
+
   Future<void> _notifyTask(Task task) async {
     final count = await NotificationService.scheduleForTask(task);
     if (!mounted) return;
@@ -219,6 +262,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         group: widget.group,
         onTap: () => _showTaskDetail(task),
         onToggle: () => _toggleTask(task),
+        onSubtaskToggle: (index) => _toggleSubtask(task, index),
         onPinToggle: () => _togglePin(task),
         onNotify: () => _notifyTask(task),
       ),
