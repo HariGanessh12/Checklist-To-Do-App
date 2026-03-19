@@ -30,6 +30,9 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      NotificationService.requestPermissions();
+    });
   }
 
   void _loadData() {

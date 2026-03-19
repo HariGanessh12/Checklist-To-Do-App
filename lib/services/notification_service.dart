@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
@@ -34,7 +35,7 @@ class NotificationService {
   static Future<void> init() async {
     if (_isInitialized) return;
     await _initPluginCore();
-    await requestPermissions();
+    // Defer requesting permissions to the UI so it doesn't fail silently
   }
 
   static Future<void> _initPluginCore() async {
@@ -221,6 +222,7 @@ class NotificationService {
   static Future<void> handleNotificationResponse(
     NotificationResponse response,
   ) async {
+    WidgetsFlutterBinding.ensureInitialized();
     final actionId = response.actionId;
     if (actionId != _snooze10mActionId &&
         actionId != _snooze1hActionId &&
