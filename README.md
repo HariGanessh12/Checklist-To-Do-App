@@ -131,16 +131,6 @@ Because the app is offline-first, user data is stored locally on-device using `s
 - Android exact alarm permission may be requested for precise reminder scheduling
 - Android home screen widgets are supported through native widget integrations
 
-## Screenshots
-
-Add product screenshots here when available.
-
-```md
-![Home Screen](path/to/home-screen.png)
-![Task Detail](path/to/task-detail.png)
-![Settings](path/to/settings.png)
-```
-
 ## Future Improvements
 
 - Cloud sync and remote backup support
